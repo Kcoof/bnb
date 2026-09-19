@@ -52,8 +52,12 @@ export async function signUpAction(input: {
     // partial-failure cleanup (review minor): don't orphan an auth user with
     // no profile — delete it so the signup can be retried cleanly
     await admin.auth.admin.deleteUser(userId);
+    const cause =
+      err instanceof Error && err.cause instanceof Error
+        ? ` (${err.cause.message})`
+        : "";
     return {
-      error: `Signup failed: ${err instanceof Error ? err.message : "unknown error"}`,
+      error: `Signup failed: ${err instanceof Error ? err.message : "unknown error"}${cause}`,
     };
   }
 
