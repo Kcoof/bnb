@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { supabasePublicKey } from "@/lib/supabase/keys";
 
 // Session refresh in middleware (Supabase SSR pattern, plan §3.4).
 export async function updateSession(request: NextRequest) {
@@ -7,7 +8,7 @@ export async function updateSession(request: NextRequest) {
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
+    supabasePublicKey(),
     {
       cookies: {
         getAll() {
