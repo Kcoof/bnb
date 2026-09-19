@@ -4,6 +4,12 @@ import { supabasePublicKey } from "@/lib/supabase/keys";
 
 // Session refresh in middleware (Supabase SSR pattern, plan §3.4).
 export async function updateSession(request: NextRequest) {
+  // Unconfigured (env vars missing / not redeployed): pass through instead of
+  // crashing every request — pages that need Supabase will surface the error.
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !supabasePublicKey()) {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
