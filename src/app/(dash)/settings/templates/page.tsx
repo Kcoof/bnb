@@ -1,0 +1,51 @@
+import Link from "next/link";
+import { eq } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { emailTemplates } from "@/lib/db/schema";
+import { requireOrgMember } from "@/lib/auth";
+import { TemplateEditor } from "./TemplateEditor";
+
+const TYPES = [
+  { id: "welcome", label: "Welcome", subject: "Your stay at {{propertyName}} — meet your assistant" },
+  { id: "checkin", label: "Check-in instructions", subject: "Everything you need for check-in at {{propertyName}} ({{checkIn}})" },
+  { id: "checkout", label: "Checkout instructions", subject: "Checkout on {{checkOut}} at {{checkoutTime}} — quick checklist" },
+];
+
+export default async function TemplatesPage() {
+  const member = await requireOrgMember();
+  if (!member) return null;
+
+  const overrides = await db
+    .select()
+    .from(emailTemplates)
+    .where(eq(emailTemplates.orgId, member.profile.orgId));
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-6">
+      <h1 className="text-2xl font-semibold text-slate-900">Email templates</h1>
+      <nav className="flex gap-2 text-sm">
+        <Link href="/settings" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-slate-600 hover:bg-slate-50">Organization</Link>
+        <Link href="/settings/team" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-slate-600 hover:bg-slate-50">Team</Link>
+        <span className="rounded-lg bg-slate-900 px-3 py-1.5 font-medium text-white">Email templates</span>
+      </nav>
+
+      <p className="text-sm text-slate-500">
+        Overrides use HTML with placeholders: {"{{guestFirstName}} {{propertyName}} {{checkIn}} {{checkOut}} {{checkinTime}} {{checkoutTime}} {{chatUrl}} {{assistantName}} {{orgName}}"} and any knowledge-base field. Leave empty to keep the system default.
+      </p>
+
+      {TYPES.map((t) => {
+        const override = overrides.find((o) => o.type === t.id);
+        return (
+          <TemplateEditor
+            key={t.id}
+            type={t.id}
+            label={t.label}
+            defaultSubject={t.subject}
+            initialSubject={override?.subject ?? ""}
+            initialBody={override?.body ?? ""}
+          />
+        );
+      })}
+    </div>
+  );
+}

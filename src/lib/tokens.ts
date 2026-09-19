@@ -1,0 +1,84 @@
+import "server-only";
+import { randomBytes } from "node:crypto";
+import { and, eq } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { properties, reservations, tasks } from "@/lib/db/schema";
+
+// Token design — plan §3.3.
+export const TOKEN_PRE_DAYS = 3; // guest link live from check-in − 3 days
+export const TOKEN_POST_DAYS = 2; // …until check-out + 2 days
+
+export function generateGuestToken(): string {
+  return "gst_" + randomBytes(32).toString("base64url");
+}
+
+export function generateTaskToken(): string {
+  return "cln_" + randomBytes(32).toString("base64url");
+}
+
+function addDays(dateStr: string, days: number): Date {
+  const d = new Date(dateStr + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + days);
+  return d;
+}
+
+export type GuestTokenContext = {
+  reservation: typeof reservations.$inferSelect;
+  property: typeof properties.$inferSelect;
+};
+
+/**
+ * Look up a reservation by exact chat token and enforce the validity window:
+ * check-in − TOKEN_PRE_DAYS → check-out + TOKEN_POST_DAYS, status upcoming|arrived.
+ * Returns null for any miss (caller renders the "link no longer active" page).
+ */
+export async function validateGuestToken(
+  token: string,
+): Promise<GuestTokenContext | null> {
+  if (!token.startsWith("gst_")) return null;
+  const rows = await db
+    .select({ reservation: reservations, property: properties })
+    .from(reservations)
+    .innerJoin(properties, eq(reservations.propertyId, properties.id))
+    .where(eq(reservations.chatToken, token))
+    .limit(1);
+  const row = rows[0];
+  if (!row) return null;
+
+  const { reservation, property } = row;
+  if (reservation.isHold) return null;
+  if (reservation.status !== "upcoming" && reservation.status !== "arrived")
+    return null;
+
+  const now = new Date();
+  if (now < addDays(reservation.checkIn, -TOKEN_PRE_DAYS)) return null;
+  if (now > addDays(reservation.checkOut, TOKEN_POST_DAYS)) return null;
+
+  return { reservation, property };
+}
+
+export type TaskTokenContext = {
+  task: typeof tasks.$inferSelect;
+};
+
+/** Look up a cleaning task by token; valid until done/skipped/cancelled + 7 days. */
+export async function validateTaskToken(
+  token: string,
+): Promise<TaskTokenContext | null> {
+  if (!token.startsWith("cln_")) return null;
+  const rows = await db
+    .select()
+    .from(tasks)
+    .where(and(eq(tasks.token, token)))
+    .limit(1);
+  const task = rows[0];
+  if (!task) return null;
+
+  if (task.status === "pending" || task.status === "in_progress") return { task };
+
+  const closedAt = task.completedAt ?? task.createdAt;
+  const expires = new Date(closedAt);
+  expires.setUTCDate(expires.getUTCDate() + 7);
+  if (new Date() > expires) return null;
+  return { task };
+}
