@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Next.js / build
+.next/
+out/
+build/
+dist/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Deployment
+.vercel/
+
+# OS / logs
+.DS_Store
+Thumbs.db
+*.log
+
+# Local orchestration
+.delegate/
