@@ -40,6 +40,7 @@ export async function updateSession(request: NextRequest) {
 
   if (
     !user &&
+    request.nextUrl.pathname !== "/" && // landing page is public
     !request.nextUrl.pathname.startsWith("/login") &&
     !request.nextUrl.pathname.startsWith("/chat/") &&
     !request.nextUrl.pathname.startsWith("/c/") &&
