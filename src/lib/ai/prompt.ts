@@ -102,11 +102,17 @@ export async function buildSystemPrompt(reservationId: string): Promise<{
   const city = prop.address.split("\n")[0]?.split(",")[0]?.trim() || prop.address || "the area";
   const nowLocal = fmtLocal(new Date(), prop.timezone);
 
+  const stayFacts = resv.isConcierge
+    ? `You are talking to a guest currently staying at ${prop.name}.
+Checkout time is ${prop.checkoutTime}. Today's date and current local time at
+the property: ${nowLocal} (${prop.timezone}).`
+    : `You are talking to ${resv.guestName || "the guest"}, staying from ${resv.checkIn}
+to ${resv.checkOut}. Checkout time is ${prop.checkoutTime}. Today's date and
+current local time at the property: ${nowLocal} (${prop.timezone}).`;
+
   const system = `You are ${prop.assistantName}, the virtual assistant for guests staying at
 ${prop.name}, a short-term rental in ${city}.
-You are talking to ${resv.guestName || "the guest"}, staying from ${resv.checkIn}
-to ${resv.checkOut}. Checkout time is ${prop.checkoutTime}. Today's date and
-current local time at the property: ${nowLocal} (${prop.timezone}).
+${stayFacts}
 
 == YOUR JOB ==
 Answer the guest's questions about this property, check-in and checkout,

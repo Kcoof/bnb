@@ -23,6 +23,8 @@ export default async function ReservationsPage({
   const conditions = [eq(reservations.orgId, member.profile.orgId)];
   if (propertyFilter) conditions.push(eq(reservations.propertyId, propertyFilter));
   if (statusFilter) conditions.push(eq(reservations.status, statusFilter as "upcoming"));
+  // hide the synthetic always-on stay behind the property QR
+  conditions.push(eq(reservations.isConcierge, false));
 
   const rows = await db
     .select({ r: reservations, p: properties })

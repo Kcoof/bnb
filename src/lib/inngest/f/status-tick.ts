@@ -24,6 +24,7 @@ export const statusTick = inngest.createFunction(
       const hhmm = localHHMM(prop.timezone);
 
       // 1) arrival: live reservation covers today, past check-in time, still ready
+      //    (concierge QR stays never count as arrivals)
       if (prop.status === "ready") {
         const arriving = (
           await db
@@ -33,6 +34,7 @@ export const statusTick = inngest.createFunction(
               and(
                 eq(reservations.propertyId, prop.id),
                 eq(reservations.status, "upcoming"),
+                eq(reservations.isConcierge, false),
               ),
             )
         ).find((r) => r.checkIn <= today && today < r.checkOut);
@@ -68,6 +70,7 @@ export const statusTick = inngest.createFunction(
               and(
                 eq(reservations.propertyId, prop.id),
                 eq(reservations.status, "arrived"),
+                eq(reservations.isConcierge, false),
               ),
             )
         // past checkout time on the departure day, or any earlier day

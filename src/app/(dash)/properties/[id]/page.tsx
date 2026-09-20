@@ -64,7 +64,17 @@ export default async function PropertyPage({
           </Link>
           <h1 className="text-2xl font-semibold text-slate-900">{p.name}</h1>
         </div>
-        <StatusPill status={p.status} />
+        <div className="flex items-center gap-2">
+          {p.conciergeToken && (
+            <Link
+              href={`/properties/${p.id}/card`}
+              className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:border-stone-400"
+            >
+              📇 Concierge QR card
+            </Link>
+          )}
+          <StatusPill status={p.status} />
+        </div>
       </div>
 
       <nav className="flex gap-1 border-b border-slate-200">

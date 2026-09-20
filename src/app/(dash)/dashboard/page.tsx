@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import {
   conversations,
   escalations,
+  messages,
   properties,
   reservations,
   tasks,
@@ -35,6 +36,7 @@ export default async function DashboardPage() {
         eq(reservations.orgId, orgId),
         eq(reservations.checkIn, today),
         eq(reservations.isHold, false),
+        eq(reservations.isConcierge, false),
       ),
     );
   const departures = await db
@@ -46,6 +48,7 @@ export default async function DashboardPage() {
         eq(reservations.orgId, orgId),
         eq(reservations.checkOut, today),
         eq(reservations.isHold, false),
+        eq(reservations.isConcierge, false),
       ),
     );
 
@@ -66,6 +69,35 @@ export default async function DashboardPage() {
     acc[p.status] = (acc[p.status] ?? 0) + 1;
     return acc;
   }, {});
+
+  // AI handled % — conversations with guest activity where the AI resolved
+  // everything without an escalation (Automi spec metric)
+  const aiStats = await db
+    .select({
+      conversationId: conversations.id,
+    })
+    .from(conversations)
+    .innerJoin(
+      messages,
+      sql`${messages.conversationId} = ${conversations.id} and ${messages.role} = 'guest'`,
+    )
+    .where(eq(conversations.orgId, orgId))
+    .groupBy(conversations.id);
+  const totalConversations = aiStats.length;
+  const escalatedConversations = new Set(
+    (
+      await db
+        .select({ conversationId: escalations.conversationId })
+        .from(escalations)
+        .where(eq(escalations.orgId, orgId))
+    )
+      .map((e) => e.conversationId)
+      .filter((id): id is string => Boolean(id)),
+  ).size;
+  const aiHandledPct =
+    totalConversations > 0
+      ? Math.round(((totalConversations - escalatedConversations) / totalConversations) * 100)
+      : null;
 
   const tasksToday = await db
     .select({ t: tasks, p: properties })
@@ -111,6 +143,16 @@ export default async function DashboardPage() {
           </div>
         ))}
       </div>
+
+      {aiHandledPct !== null && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+          <div className="text-2xl font-semibold text-emerald-800">{aiHandledPct}%</div>
+          <div className="text-sm text-emerald-700">
+            of guest conversations handled by the AI without you —{" "}
+            {totalConversations - escalatedConversations} of {totalConversations} conversations
+          </div>
+        </div>
+      )}
 
       {escalationCount ? (
         <Link

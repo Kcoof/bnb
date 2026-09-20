@@ -121,6 +121,8 @@ export const properties = pgTable(
       .notNull()
       .references(() => organizations.id),
     name: text("name").notNull(),
+    type: text("type").notNull().default("apartment"), // apartment|villa|boutique_hotel|guesthouse|serviced_apartment
+    description: text("description").notNull().default(""),
     address: text("address").notNull().default(""),
     timezone: text("timezone").notNull().default("UTC"),
     status: propertyStatus("status").notNull().default("ready"),
@@ -130,6 +132,7 @@ export const properties = pgTable(
     checkinTime: text("checkin_time").notNull().default("16:00"),
     checkoutTime: text("checkout_time").notNull().default("10:00"),
     assistantName: text("assistant_name").notNull().default("Alex"),
+    conciergeToken: text("concierge_token").unique(), // property-level QR chat (no reservation)
     active: boolean("active").notNull().default(true),
     createdAt,
   },
@@ -175,6 +178,7 @@ export const reservations = pgTable(
     channel: reservationChannel("channel").notNull().default("manual"),
     externalUid: text("external_uid"),
     isHold: boolean("is_hold").notNull().default(false),
+    isConcierge: boolean("is_concierge").notNull().default(false), // synthetic stay behind the property QR
     status: reservationStatus("status").notNull().default("upcoming"),
     chatToken: text("chat_token").unique(),
     notes: text("notes"),

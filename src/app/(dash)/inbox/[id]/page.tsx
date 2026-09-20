@@ -12,6 +12,7 @@ import { requireOrgMember } from "@/lib/auth";
 import { markConversationReadAction } from "@/app/actions/conversations";
 import { HostComposer } from "./HostComposer";
 import { EscalationBannerActions } from "./EscalationBannerActions";
+import { ApproveDeclineButtons } from "./ApproveDeclineButtons";
 import { CopyButton } from "@/components/CopyButton";
 import { chatUrl } from "@/lib/mail";
 
@@ -82,7 +83,8 @@ export default async function ConversationPage({
             {e.urgency === "high" ? " — URGENT" : ""}
           </div>
           <div className="mt-1 text-sm text-red-700">{e.summary}</div>
-          <div className="mt-2">
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <ApproveDeclineButtons conversationId={c.id} />
             <EscalationBannerActions escalationId={e.id} />
           </div>
         </div>

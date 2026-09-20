@@ -2,7 +2,13 @@ import { NextRequest } from "next/server";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import { db } from "@/lib/db";
-import { conversations, escalations, messages } from "@/lib/db/schema";
+import {
+  conversations,
+  escalations,
+  messages,
+  properties,
+  propertyKnowledge,
+} from "@/lib/db/schema";
 import { validateGuestToken } from "@/lib/tokens";
 import { buildSystemPrompt, prefilterHit } from "@/lib/ai/prompt";
 import { aiClient, aiModel, escalateTool } from "@/lib/ai/client";
@@ -16,6 +22,10 @@ export const maxDuration = 60;
 const MIN_INTERVAL_MS = 8_000; // ≥8s between guest messages
 const MAX_PER_DAY = 60; // ≤60 guest msgs / 24h
 const MAX_CHARS = 2000;
+
+// Instant emergency path — matches the emergency subset of the pre-filter
+const EMERGENCY_RE =
+  /\b(fire|gas leak|smoke|break[- ]?in|burglar|intruder|medical emergency|ambulance|can'?t breathe|bleeding|unconscious|seizure|stroke|heart attack|dying|police|danger|unsafe|help me now)\b/i;
 
 export async function POST(
   request: NextRequest,
@@ -104,6 +114,68 @@ export async function POST(
 
   const { system, history, meta } = await buildSystemPrompt(reservation.id);
   const flagged = prefilterHit(guestMessage);
+
+  // ── Emergency fast-path (Automi spec): fire/gas/medical/security keywords
+  // get an instant KB-based response and an immediate high-urgency host alert.
+  // No model call — do not wait for the AI.
+  if (EMERGENCY_RE.test(guestMessage)) {
+    const kbRow = (
+      await db
+        .select({ emergencyInfo: propertyKnowledge.emergencyInfo, assistantName: properties.assistantName })
+        .from(properties)
+        .innerJoin(propertyKnowledge, eq(propertyKnowledge.propertyId, properties.id))
+        .where(eq(properties.id, reservation.propertyId))
+        .limit(1)
+    )[0];
+    const emergencyText = [
+      "🚨 If you are in immediate danger, please call your local emergency number (e.g. 112 / 911) FIRST.",
+      kbRow?.emergencyInfo?.trim()
+        ? `\n\nEmergency information for this property:\n${kbRow.emergencyInfo.trim()}`
+        : "",
+      "\n\nI've also alerted your host right away — they are being notified now.",
+    ]
+      .join("")
+      .trim();
+
+    await db.insert(messages).values({
+      orgId: reservation.orgId,
+      conversationId,
+      role: "assistant",
+      content: emergencyText,
+      model: "emergency-fastpath",
+      escalated: true,
+      escalationReason: "emergency",
+    });
+    await db
+      .update(conversations)
+      .set({ lastMessageAt: new Date() })
+      .where(eq(conversations.id, conversationId));
+    const insertedEsc = await db
+      .insert(escalations)
+      .values({
+        orgId: reservation.orgId,
+        source: "chat",
+        conversationId,
+        reason: "emergency",
+        summary: guestMessage.slice(0, 200),
+        urgency: "high",
+      })
+      .returning({ id: escalations.id });
+    if (insertedEsc[0]) {
+      await inngest.send({
+        name: "escalation/created",
+        data: { escalationId: insertedEsc[0].id },
+      });
+    }
+
+    return new Response(emergencyText, {
+      headers: {
+        "content-type": "text/plain; charset=utf-8",
+        "cache-control": "no-store",
+        "x-robots-tag": "noindex",
+      },
+    });
+  }
 
   // Map DB roles to API roles: guest→user, assistant→assistant.
   // host rows are skipped — they are already injected in the system prompt

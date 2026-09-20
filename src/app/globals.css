@@ -24,3 +24,24 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Printable concierge card: hide everything except #card */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #card,
+  #card * {
+    visibility: visible;
+  }
+  #card {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    box-shadow: none !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

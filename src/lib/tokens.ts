@@ -30,12 +30,13 @@ export type GuestTokenContext = {
 /**
  * Look up a reservation by exact chat token and enforce the validity window:
  * check-in − TOKEN_PRE_DAYS → check-out + TOKEN_POST_DAYS, status upcoming|arrived.
+ * Property-QR concierge tokens (cnc_…) skip the window — they are always-on.
  * Returns null for any miss (caller renders the "link no longer active" page).
  */
 export async function validateGuestToken(
   token: string,
 ): Promise<GuestTokenContext | null> {
-  if (!token.startsWith("gst_")) return null;
+  if (!token.startsWith("gst_") && !token.startsWith("cnc_")) return null;
   const rows = await db
     .select({ reservation: reservations, property: properties })
     .from(reservations)
@@ -47,6 +48,9 @@ export async function validateGuestToken(
 
   const { reservation, property } = row;
   if (reservation.isHold) return null;
+
+  if (reservation.isConcierge) return { reservation, property };
+
   if (reservation.status !== "upcoming" && reservation.status !== "arrived")
     return null;
 

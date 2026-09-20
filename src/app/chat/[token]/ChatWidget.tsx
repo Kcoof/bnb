@@ -4,6 +4,16 @@ import { useEffect, useRef, useState } from "react";
 
 type Msg = { role: string; content: string; createdAt?: string };
 
+const QUICK_REPLIES = [
+  "WiFi",
+  "Parking",
+  "Check-in",
+  "Checkout",
+  "House rules",
+  "Nearby places",
+  "I need help",
+];
+
 export function ChatWidget(props: {
   token: string;
   assistantName: string;
@@ -151,26 +161,40 @@ export function ChatWidget(props: {
       </div>
 
       <footer className="sticky bottom-0 border-t border-slate-200 bg-white px-4 py-3">
-        <div className="mx-auto flex max-w-2xl gap-2">
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && send()}
-            placeholder="Type your question…"
-            maxLength={2000}
-            className="flex-1 rounded-full border border-slate-300 px-4 py-2 text-sm focus:border-slate-400 focus:outline-none"
-          />
-          <button
-            onClick={send}
-            disabled={streaming || !input.trim()}
-            className="rounded-full bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-          >
-            {streaming ? "…" : "Send"}
-          </button>
+        <div className="mx-auto max-w-2xl">
+          <div className="mb-2 flex gap-1.5 overflow-x-auto pb-1">
+            {QUICK_REPLIES.map((q) => (
+              <button
+                key={q}
+                onClick={() => setInput(q)}
+                disabled={streaming}
+                className="shrink-0 rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-blue-400 hover:text-blue-700 disabled:opacity-50"
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && send()}
+              placeholder="Type your question…"
+              maxLength={2000}
+              className="flex-1 rounded-full border border-slate-300 px-4 py-2 text-sm focus:border-slate-400 focus:outline-none"
+            />
+            <button
+              onClick={send}
+              disabled={streaming || !input.trim()}
+              className="rounded-full bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              {streaming ? "…" : "Send"}
+            </button>
+          </div>
+          {error && (
+            <p className="mt-1 text-center text-xs text-red-600">{error}</p>
+          )}
         </div>
-        {error && (
-          <p className="mx-auto mt-1 max-w-2xl text-center text-xs text-red-600">{error}</p>
-        )}
       </footer>
     </main>
   );
