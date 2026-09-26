@@ -17,24 +17,24 @@ export default async function TeamPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <h1 className="text-2xl font-semibold text-slate-900">Team</h1>
+      <h1 className="text-title-1">Team</h1>
       <nav className="flex gap-2 text-sm">
-        <Link href="/settings" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-slate-600 hover:bg-slate-50">Organization</Link>
+        <Link href="/settings" className="rounded-lg border border-hairline bg-white px-3 py-1.5 text-ink-2 hover:bg-surface-2">Organization</Link>
         <span className="rounded-lg bg-slate-900 px-3 py-1.5 font-medium text-white">Team</span>
-        <Link href="/settings/templates" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-slate-600 hover:bg-slate-50">Email templates</Link>
+        <Link href="/settings/templates" className="rounded-lg border border-hairline bg-white px-3 py-1.5 text-ink-2 hover:bg-surface-2">Email templates</Link>
       </nav>
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+      <div className="overflow-hidden card">
         {team.map((p) => (
-          <div key={p.id} className="flex items-center justify-between border-b border-slate-100 p-4 last:border-0">
+          <div key={p.id} className="flex items-center justify-between border-b border-hairline p-4 last:border-0">
             <div>
-              <div className="font-medium text-slate-900">
+              <div className="font-semibold text-ink">
                 {p.fullName || p.email}{" "}
-                <span className="ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
+                <span className="ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-ink-2">
                   {p.role}
                 </span>
               </div>
-              <div className="text-xs text-slate-500">{p.email}</div>
+              <div className="text-xs text-ink-2">{p.email}</div>
             </div>
             {member.profile.role === "owner" && p.id !== member.profile.id && (
               <RemoveStaffButton profileId={p.id} />
@@ -46,7 +46,7 @@ export default async function TeamPage() {
       {member.profile.role === "owner" ? (
         <InviteForm />
       ) : (
-        <p className="text-sm text-slate-500">Only the owner can invite staff.</p>
+        <p className="text-sm text-ink-2">Only the owner can invite staff.</p>
       )}
     </div>
   );

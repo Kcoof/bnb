@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { properties } from "@/lib/db/schema";
 import { requireOrgMember } from "@/lib/auth";
 import { StatusPill } from "@/components/StatusPill";
+import { Icon } from "@/components/Icon";
 
 export default async function PropertiesPage() {
   const member = await requireOrgMember();
@@ -15,42 +16,49 @@ export default async function PropertiesPage() {
     .where(eq(properties.orgId, member.profile.orgId));
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-stone-900">Properties</h1>
-        <Link
-          href="/properties/new"
-          className="rounded-full bg-stone-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-stone-700"
-        >
-          + Add property
+    <div className="space-y-6">
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-title-1">Properties</h1>
+        <Link href="/properties/new" className="btn btn-primary btn-md">
+          <Icon name="plus" size={16} />
+          Add property
         </Link>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-        {props.length === 0 && (
-          <p className="p-4 text-sm text-slate-500">
-            No properties yet — set up your first concierge in about 5 minutes.
+      {props.length === 0 ? (
+        <div className="flex flex-col items-center px-6 py-16 text-center">
+          <div className="grid h-14 w-14 place-items-center rounded-[16px] bg-accent-tint text-accent">
+            <Icon name="house" size={24} />
+          </div>
+          <h2 className="mt-4 text-title-3">No properties yet</h2>
+          <p className="mt-1.5 max-w-xs text-callout text-ink-2">
+            Set up your first concierge in about 5 minutes.
           </p>
-        )}
-        {props.map((p) => (
-          <Link
-            key={p.id}
-            href={`/properties/${p.id}`}
-            className="flex items-center justify-between border-b border-slate-100 p-4 last:border-0 hover:bg-slate-50"
-          >
-            <div>
-              <div className="font-medium text-slate-900">{p.name}</div>
-              <div className="text-xs text-slate-500">
-                {p.address || "no address"} · check-in {p.checkinTime} · checkout{" "}
-                {p.checkoutTime}
-                {p.icsUrl ? " · iCal connected" : ""}
-                {p.conciergeToken ? " · QR ready" : ""}
-              </div>
-            </div>
-            <StatusPill status={p.status} />
+          <Link href="/properties/new" className="btn btn-primary btn-md mt-6">
+            Set up your first concierge
           </Link>
-        ))}
-      </div>
+        </div>
+      ) : (
+        <div className="list-card">
+          {props.map((p) => (
+            <Link key={p.id} href={`/properties/${p.id}`} className="list-row">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface-2 text-ink-2">
+                <Icon name="house" size={20} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-callout font-medium text-ink">{p.name}</span>
+                <span className="mt-0.5 block truncate text-footnote text-ink-2">
+                  {p.address || "no address"} · check-in {p.checkinTime} · checkout {p.checkoutTime}
+                  {p.icsUrl ? " · iCal connected" : ""}
+                  {p.conciergeToken ? " · QR ready" : ""}
+                </span>
+              </span>
+              <StatusPill status={p.status} />
+              <Icon name="chevronRight" size={16} className="shrink-0 text-ink-3" />
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

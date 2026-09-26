@@ -43,35 +43,35 @@ export function EditReservationForm(props: {
   return (
     <form action={onSubmit} className="mt-3 grid gap-4 sm:grid-cols-3">
       <div>
-        <label className="block text-sm font-medium text-slate-700">Guest name</label>
-        <input name="guestName" defaultValue={props.initial.guestName} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+        <label className="mb-1.5 block text-[13px] font-medium text-ink">Guest name</label>
+        <input name="guestName" defaultValue={props.initial.guestName} className="input" />
       </div>
       <div>
-        <label className="block text-sm font-medium text-slate-700">Guest email</label>
-        <input name="guestEmail" type="email" defaultValue={props.initial.guestEmail} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+        <label className="mb-1.5 block text-[13px] font-medium text-ink">Guest email</label>
+        <input name="guestEmail" type="email" defaultValue={props.initial.guestEmail} className="input" />
       </div>
       <div>
-        <label className="block text-sm font-medium text-slate-700">Guest phone</label>
-        <input name="guestPhone" defaultValue={props.initial.guestPhone} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+        <label className="mb-1.5 block text-[13px] font-medium text-ink">Guest phone</label>
+        <input name="guestPhone" defaultValue={props.initial.guestPhone} className="input" />
       </div>
       <div>
-        <label className="block text-sm font-medium text-slate-700">Check-in</label>
-        <input name="checkIn" type="date" defaultValue={props.initial.checkIn} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+        <label className="mb-1.5 block text-[13px] font-medium text-ink">Check-in</label>
+        <input name="checkIn" type="date" defaultValue={props.initial.checkIn} className="input" />
       </div>
       <div>
-        <label className="block text-sm font-medium text-slate-700">Check-out</label>
-        <input name="checkOut" type="date" defaultValue={props.initial.checkOut} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+        <label className="mb-1.5 block text-[13px] font-medium text-ink">Check-out</label>
+        <input name="checkOut" type="date" defaultValue={props.initial.checkOut} className="input" />
       </div>
       <div>
-        <label className="block text-sm font-medium text-slate-700">Internal notes</label>
-        <input name="notes" defaultValue={props.initial.notes} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+        <label className="mb-1.5 block text-[13px] font-medium text-ink">Internal notes</label>
+        <input name="notes" defaultValue={props.initial.notes} className="input" />
       </div>
       <div className="sm:col-span-3 flex items-center gap-3">
-        <button type="submit" disabled={pending} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50">
+        <button type="submit" disabled={pending} className="btn btn-primary btn-md">
           {pending ? "Saving…" : "Save"}
         </button>
-        {saved && <span className="text-sm text-emerald-700">Saved ✓ (date changes re-schedule pending emails)</span>}
-        {error && <span className="text-sm text-red-700">{error}</span>}
+        {saved && <span className="text-footnote text-success">Saved ✓ (date changes re-schedule pending emails)</span>}
+        {error && <span className="text-footnote text-danger">{error}</span>}
       </div>
     </form>
   );

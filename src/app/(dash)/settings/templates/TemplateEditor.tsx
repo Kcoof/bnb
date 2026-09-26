@@ -29,21 +29,21 @@ export function TemplateEditor(props: {
         )}
       </div>
       <div>
-        <label className="block text-sm font-medium text-slate-700">Subject</label>
+        <label className="mb-1.5 block text-[13px] font-medium text-ink">Subject</label>
         <input
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          className="input"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-slate-700">Body (HTML)</label>
+        <label className="mb-1.5 block text-[13px] font-medium text-ink">Body (HTML)</label>
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
           rows={5}
           placeholder="Empty = system default template"
-          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono"
+          className="input font-mono"
         />
       </div>
       <div className="flex flex-wrap items-center gap-2">
@@ -61,7 +61,7 @@ export function TemplateEditor(props: {
             }
           }}
           disabled={pending}
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+          className="btn btn-primary btn-md"
         >
           {pending ? "…" : "Save template"}
         </button>
@@ -70,7 +70,7 @@ export function TemplateEditor(props: {
           onChange={(e) => setTestTo(e.target.value)}
           type="email"
           placeholder="send test to…"
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          className="input"
         />
         <button
           onClick={async () => {
@@ -83,8 +83,8 @@ export function TemplateEditor(props: {
         >
           Send test email
         </button>
-        {saved && <span className="text-sm text-emerald-700">Saved ✓</span>}
-        {error && <span className="text-sm text-red-700">{error}</span>}
+        {saved && <span className="text-footnote text-success">Saved ✓</span>}
+        {error && <span className="text-footnote text-danger">{error}</span>}
         {testResult && <span className="text-sm text-slate-600">{testResult}</span>}
       </div>
     </div>

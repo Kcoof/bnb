@@ -47,7 +47,7 @@ export function IcsPanel(props: {
   return (
     <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-6">
       <div>
-        <label className="block text-sm font-medium text-slate-700">
+        <label className="mb-1.5 block text-[13px] font-medium text-ink">
           iCal / ICS URL (Airbnb, Booking.com, VRBO export)
         </label>
         <div className="mt-1 flex gap-2">
@@ -55,12 +55,12 @@ export function IcsPanel(props: {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://www.airbnb.com/calendar/ical/….ics"
-            className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            className="flex-1 input"
           />
           <button
             onClick={onSave}
             disabled={pending !== null}
-            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+            className="btn btn-primary btn-md"
           >
             {pending === "save" ? "Saving…" : "Save"}
           </button>
@@ -75,7 +75,7 @@ export function IcsPanel(props: {
         >
           {pending === "sync" ? "Syncing…" : "Sync now"}
         </button>
-        <span className="text-xs text-slate-500">
+        <span className="text-caption-1 text-ink-2">
           {props.property.lastSynced
             ? `Last synced: ${props.property.lastSynced} (auto every 2h)`
             : "Never synced — automatic sync runs every 2 hours"}
@@ -87,10 +87,10 @@ export function IcsPanel(props: {
           Last sync error: {props.property.lastError}
         </p>
       )}
-      {message && <p className="text-sm text-emerald-700">{message}</p>}
-      {error && <p className="text-sm text-red-700">{error}</p>}
+      {message && <p className="text-footnote text-success">{message}</p>}
+      {error && <p className="text-footnote text-danger">{error}</p>}
 
-      <p className="text-xs text-slate-400">
+      <p className="text-caption-1 text-ink-3">
         Channel iCal feeds do not include guest name or email — reservations arrive
         without contact details. Use the copy-paste snippet on the reservation page
         to hand the guest their chat link.

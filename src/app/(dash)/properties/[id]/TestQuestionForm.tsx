@@ -24,9 +24,9 @@ export function TestQuestionForm(props: { propertyId: string }) {
   }
 
   return (
-    <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-6">
-      <h2 className="font-medium text-slate-900">Test AI question</h2>
-      <p className="text-xs text-slate-500">
+    <div className="space-y-3 card p-6">
+      <h2 className="font-semibold text-ink">Test AI question</h2>
+      <p className="text-xs text-ink-2">
         Plays a guest question against the current knowledge base — exactly what a
         guest would get.
       </p>
@@ -49,7 +49,7 @@ export function TestQuestionForm(props: { propertyId: string }) {
       {answer && (
         <div
           className={`rounded-lg p-3 text-sm whitespace-pre-wrap ${
-            escalated ? "bg-amber-50 text-amber-900" : "bg-slate-50 text-slate-800"
+            escalated ? "bg-amber-50 text-amber-900" : "bg-surface-2 text-ink"
           }`}
         >
           {escalated && <div className="mb-1 font-medium">⚠ Would escalate to host</div>}

@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { properties, propertyKnowledge } from "@/lib/db/schema";
 import { validateTaskToken } from "@/lib/tokens";
 import { StatusPill } from "@/components/StatusPill";
+import { Icon } from "@/components/Icon";
 import { CleanerActions } from "./CleanerActions";
 
 export const metadata: Metadata = {
@@ -35,28 +36,40 @@ export default async function CleanerTaskPage({
   const closed = task.status === "done" || task.status === "skipped" || task.status === "cancelled";
 
   return (
-    <main className="mx-auto max-w-xl space-y-6 px-4 py-10">
-      <div>
-        <h1 className="text-xl font-semibold text-slate-900">Cleaning — {p.name}</h1>
-        <div className="mt-1 text-sm text-slate-500">
-          {p.address} · due{" "}
-          {task.dueAt ? new Date(task.dueAt).toISOString().slice(0, 16).replace("T", " ") : "—"}
+    <main className="mx-auto max-w-[480px] px-4 pb-[max(env(safe-area-inset-bottom),24px)] pt-8">
+      <div className="animate-fade-up">
+        <p className="text-footnote text-ink-2">Cleaning</p>
+        <h1 className="mt-1 text-title-1">{p.name}</h1>
+        <div className="mt-2 space-y-1 text-callout text-ink-2">
+          <div className="flex items-center gap-1.5">
+            <Icon name="pin" size={16} />
+            {p.address || "no address"}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Icon name="clock" size={16} />
+            due{" "}
+            {task.dueAt
+              ? new Date(task.dueAt).toISOString().slice(0, 16).replace("T", " ")
+              : "—"}
+          </div>
         </div>
-        <div className="mt-2">
+        <div className="mt-3">
           <StatusPill status={task.status} />
         </div>
       </div>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-4">
-        <h2 className="font-medium text-slate-900">Access notes</h2>
-        <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700">
+      <section className="card mt-6 p-5">
+        <h2 className="text-callout font-semibold">Access notes</h2>
+        <p className="mt-1.5 whitespace-pre-wrap text-body text-ink-2">
           {kb.cleaningNotes || "(no access notes provided)"}
         </p>
       </section>
 
-      <CleanerActions token={token} closed={closed} status={task.status} />
+      <div className="mt-6">
+        <CleanerActions token={token} closed={closed} status={task.status} />
+      </div>
 
-      <p className="text-center text-xs text-slate-400">
+      <p className="mt-6 text-center text-caption-1 text-ink-3">
         This is your personal task link — no login needed.
       </p>
     </main>

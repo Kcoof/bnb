@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Icon } from "@/components/Icon";
 
 type Msg = { role: string; content: string; createdAt?: string };
 
@@ -27,7 +28,7 @@ export function ChatWidget(props: {
   const bottomRef = useRef<HTMLDivElement>(null);
   const lastTimestamp = useRef<string | null>(null);
 
-  // initial + poll for host replies every 15s (§4.6)
+  // initial + poll for host replies every 15s (§4.6 of the technical plan)
   useEffect(() => {
     let cancelled = false;
     async function poll() {
@@ -73,7 +74,7 @@ export function ChatWidget(props: {
     setMessages((prev) => [
       ...prev,
       { role: "guest", content: text, createdAt: `local-${Date.now()}` },
-      { role: "assistant", content: "", createdAt: `local-stream-${Date.now()}` },
+      { role: "assistant", content: "", createdAt: "local-stream" },
     ]);
 
     try {
@@ -103,11 +104,10 @@ export function ChatWidget(props: {
         full += decoder.decode(value, { stream: true });
         setMessages((prev) => {
           const next = [...prev];
-          next[next.length - 1] = { role: "assistant", content: full, createdAt: `local-stream` };
+          next[next.length - 1] = { role: "assistant", content: full, createdAt: "local-stream" };
           return next;
         });
       }
-      // refresh from server to get canonical timestamps + host messages
       lastTimestamp.current = null;
     } catch {
       setMessages((prev) => prev.slice(0, -1));
@@ -118,84 +118,141 @@ export function ChatWidget(props: {
   }
 
   return (
-    <main className="flex min-h-screen flex-col bg-slate-50">
-      <header className="border-b border-slate-200 bg-white px-4 py-3">
-        <div className="mx-auto flex max-w-2xl items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-600 text-sm font-semibold text-white">
-            {props.assistantName.slice(0, 1)}
+    <main className="flex h-[100dvh] flex-col bg-surface">
+      {/* Header — frosted */}
+      <header className="sticky top-0 z-30 border-b border-hairline bg-[var(--nav-bg)] backdrop-blur-nav pt-[env(safe-area-inset-top)]">
+        <div className="mx-auto flex h-14 max-w-[640px] items-center gap-3 px-4">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-tint text-accent">
+            <Icon name="bot" size={20} />
           </div>
           <div>
-            <div className="text-sm font-semibold text-slate-900">
+            <div className="text-callout font-semibold text-ink">
               {props.assistantName} · {props.propertyName}
             </div>
-            <div className="text-xs text-emerald-600">online 24/7</div>
+            <div className="flex items-center gap-1.5 text-caption-1 text-success">
+              <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />
+              online 24/7
+            </div>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-2xl flex-1 space-y-2 overflow-y-auto px-4 py-6">
-        <div className="mx-auto mb-4 max-w-md rounded-xl bg-white p-4 text-center text-sm text-slate-600 shadow-sm">
-          Hi {props.guestFirst}! Ask me anything about your stay — wifi, parking,
-          check-in, checkout, the neighborhood.
-        </div>
-        {messages.map((m, i) => (
-          <div
-            key={m.createdAt ?? i}
-            className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${
-              m.role === "guest"
-                ? "ml-auto bg-blue-600 text-white"
-                : m.role === "host"
-                  ? "bg-amber-100 text-amber-900"
-                  : "bg-white text-slate-800 shadow-sm"
-            }`}
-          >
-            {m.role === "host" && (
-              <div className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide opacity-70">
-                Your host
-              </div>
-            )}
-            {m.content || (streaming ? "…" : "")}
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4">
+        <div className="mx-auto max-w-[640px] space-y-2">
+          <div className="mx-auto mb-4 max-w-md rounded-lg bg-surface-2 p-5 text-center text-callout text-ink-2">
+            Hi {props.guestFirst}! Ask me anything about your stay — wifi, parking,
+            check-in, checkout, the neighborhood.
           </div>
-        ))}
-        <div ref={bottomRef} />
+
+          {messages.map((m, i) => {
+            const prev = messages[i - 1];
+            const grouped =
+              prev && prev.role === m.role && m.createdAt !== "local-stream";
+            const isStreamingBubble = m.createdAt === "local-stream" && streaming;
+
+            if (m.role === "host") {
+              return (
+                <div key={m.createdAt ?? i} className="animate-msg-in">
+                  <div className="mb-0.5 ml-1 text-caption-1 font-medium text-ink-2">
+                    Your host
+                  </div>
+                  <div className="bubble-in">{m.content}</div>
+                </div>
+              );
+            }
+            if (m.role === "system_note") {
+              return (
+                <div key={m.createdAt ?? i} className="bubble-note animate-msg-in">
+                  {m.content}
+                </div>
+              );
+            }
+            if (m.role === "assistant") {
+              return (
+                <div
+                  key={m.createdAt ?? i}
+                  className={`bubble-in animate-msg-in ${grouped ? "!mt-0.5" : ""} ${isStreamingBubble && !m.content ? "flex items-center gap-1" : ""} ${isStreamingBubble && m.content ? "streaming-caret" : ""}`}
+                >
+                  {isStreamingBubble && !m.content ? (
+                    <>
+                      <Dot delay="0ms" />
+                      <Dot delay="150ms" />
+                      <Dot delay="300ms" />
+                    </>
+                  ) : (
+                    m.content
+                  )}
+                </div>
+              );
+            }
+            // guest
+            return (
+              <div
+                key={m.createdAt ?? i}
+                className={`bubble-out animate-msg-in ${grouped ? "!mt-0.5" : ""}`}
+              >
+                {m.content}
+              </div>
+            );
+          })}
+          <div ref={bottomRef} />
+        </div>
       </div>
 
-      <footer className="sticky bottom-0 border-t border-slate-200 bg-white px-4 py-3">
-        <div className="mx-auto max-w-2xl">
-          <div className="mb-2 flex gap-1.5 overflow-x-auto pb-1">
+      {/* Quick replies + composer — frosted */}
+      <footer className="sticky bottom-0 z-30 border-t border-hairline bg-[var(--nav-bg)] backdrop-blur-nav pb-[max(env(safe-area-inset-bottom),12px)] pt-3">
+        <div className="mx-auto max-w-[640px] px-4">
+          <div className="mb-2 flex gap-2 overflow-x-auto px-0 pb-1 [scrollbar-width:none]">
             {QUICK_REPLIES.map((q) => (
               <button
                 key={q}
                 onClick={() => setInput(q)}
                 disabled={streaming}
-                className="shrink-0 rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-blue-400 hover:text-blue-700 disabled:opacity-50"
+                className="h-9 shrink-0 rounded-full border border-line bg-surface px-4 text-[14px] font-medium text-ink transition duration-150 active:scale-[0.95] hover:border-accent hover:text-accent disabled:opacity-50"
               >
                 {q}
               </button>
             ))}
           </div>
-          <div className="flex gap-2">
-            <input
+          <div className="flex items-end gap-2 rounded-[20px] border border-line bg-surface px-3 py-1.5 transition duration-150 focus-within:border-accent focus-within:ring-[3px] focus-within:ring-focus/20">
+            <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && send()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  send();
+                }
+              }}
+              rows={1}
               placeholder="Type your question…"
               maxLength={2000}
-              className="flex-1 rounded-full border border-slate-300 px-4 py-2 text-sm focus:border-slate-400 focus:outline-none"
+              className="max-h-32 min-h-10 flex-1 resize-none bg-transparent text-[16px] leading-6 outline-none placeholder:text-ink-3"
             />
             <button
               onClick={send}
               disabled={streaming || !input.trim()}
-              className="rounded-full bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              aria-label="Send"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent text-white transition duration-150 active:scale-[0.9] disabled:bg-black/[0.08] disabled:text-ink-3"
             >
-              {streaming ? "…" : "Send"}
+              <Icon name="send" size={16} />
             </button>
           </div>
           {error && (
-            <p className="mt-1 text-center text-xs text-red-600">{error}</p>
+            <p className="mt-1.5 text-center text-footnote text-danger">{error}</p>
           )}
         </div>
       </footer>
     </main>
+  );
+}
+
+function Dot({ delay }: { delay: string }) {
+  return (
+    <span
+      className="inline-block h-2 w-2 rounded-full bg-ink-2/70 animate-typing"
+      style={{ animationDelay: delay }}
+    />
   );
 }

@@ -29,34 +29,34 @@ export function CleanerPanel(props: {
       {props.cleaners.map((c) => (
         <div key={c.id} className="flex items-center justify-between text-sm">
           <span className="font-medium text-slate-800">{c.name}</span>
-          <span className="text-xs text-slate-500">
+          <span className="text-caption-1 text-ink-2">
             {c.email || "no email"} {c.phone ? `· ${c.phone}` : ""}
           </span>
         </div>
       ))}
       {props.cleaners.length === 0 && (
-        <p className="text-sm text-slate-500">
+        <p className="text-footnote text-ink-2">
           No cleaners yet — add one to enable assignment emails.
         </p>
       )}
       <form action={onSubmit} className="flex flex-wrap items-end gap-2 border-t border-slate-100 pt-3">
         <div>
-          <label className="block text-xs font-medium text-slate-600">Name</label>
-          <input name="name" required className="mt-1 rounded-lg border border-slate-300 px-2 py-1.5 text-sm" />
+          <label className="mb-1 block text-[13px] font-medium text-ink">Name</label>
+          <input name="name" required className="input h-9 w-auto px-2.5 text-[14px]" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600">Email</label>
-          <input name="email" type="email" className="mt-1 rounded-lg border border-slate-300 px-2 py-1.5 text-sm" />
+          <label className="mb-1 block text-[13px] font-medium text-ink">Email</label>
+          <input name="email" type="email" className="input h-9 w-auto px-2.5 text-[14px]" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600">Phone</label>
-          <input name="phone" className="mt-1 rounded-lg border border-slate-300 px-2 py-1.5 text-sm" />
+          <label className="mb-1 block text-[13px] font-medium text-ink">Phone</label>
+          <input name="phone" className="input h-9 w-auto px-2.5 text-[14px]" />
         </div>
-        <button type="submit" disabled={pending} className="rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50">
+        <button type="submit" disabled={pending} className="btn btn-primary btn-sm">
           {pending ? "…" : "Add cleaner"}
         </button>
       </form>
-      {error && <p className="text-sm text-red-700">{error}</p>}
+      {error && <p className="text-footnote text-danger">{error}</p>}
     </div>
   );
 }

@@ -1,31 +1,273 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* palette — light */
+  --canvas: #f5f5f7;              /* app background */
+  --surface: #ffffff;             /* cards, lists */
+  --surface-2: #f0f0f2;           /* inset/well backgrounds, skeleton base */
+  --ink: #1d1d1f;                 /* primary text */
+  --ink-2: #6e6e73;               /* secondary text */
+  --ink-3: #86868b;               /* placeholders, disabled, decorative only */
+  --hairline: rgb(0 0 0 / 0.08);  /* separators */
+  --line: #d2d2d7;                /* input strokes */
+  --accent: #0071e3;              /* Apple blue */
+  --accent-hover: #0077ed;
+  --accent-tint: #e8f1fd;         /* selected states, icon tiles */
+  --success: #157f3d;
+  --success-tint: #e8f5ec;
+  --warning: #92400e;
+  --warning-tint: #fdf2e3;
+  --danger: #d70015;
+  --danger-hover: #b80013;
+  --danger-tint: #fdebec;
+  --focus: #0071e3;
+
+  /* chat */
+  --bubble-in: #e9e9eb;           /* received bubble, iOS Messages gray */
+
+  /* materials */
+  --nav-bg: rgb(255 255 255 / 0.72);   /* frosted light bars */
+  --sidebar-bg: rgb(246 246 247 / 0.85);
+  --overlay: rgb(0 0 0 / 0.32);
+
+  /* radii */
+  --radius-sm: 10px;   /* chips, menu items */
+  --radius-md: 14px;   /* inputs, popovers, big buttons on mobile */
+  --radius-lg: 20px;   /* cards, list containers */
+  --radius-xl: 28px;   /* hero cards, wizard, sheets, chat demo */
+
+  /* shadows — soft and diffuse only, 3 max */
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 4px 12px rgb(0 0 0 / 0.03);
+  --shadow-raised: 0 2px 6px rgb(0 0 0 / 0.05), 0 10px 28px rgb(0 0 0 / 0.07);
+  --shadow-float: 0 4px 12px rgb(0 0 0 / 0.08), 0 24px 56px rgb(0 0 0 / 0.12);
+
+  /* blur */
+  --blur-nav: 20px;    /* nav / sidebar / tab bar / chat bars */
+
+  /* motion */
+  --ease-out: cubic-bezier(0.25, 1, 0.5, 1);      /* hover, fades */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);  /* color, misc */
+  --ease-spring: cubic-bezier(0.34, 1.3, 0.64, 1);/* bubbles, popovers — slight settle */
+  --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);   /* Apple sheet slide */
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-hairline: var(--hairline);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-tint: var(--accent-tint);
+  --color-success: var(--success);
+  --color-success-tint: var(--success-tint);
+  --color-warning: var(--warning);
+  --color-warning-tint: var(--warning-tint);
+  --color-danger: var(--danger);
+  --color-danger-hover: var(--danger-hover);
+  --color-danger-tint: var(--danger-tint);
+  --color-focus: var(--focus);
+  --color-bubble-in: var(--bubble-in);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* fonts — system-first: SF on Apple devices, Geist elsewhere */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    var(--font-geist-sans), "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", var(--font-geist-mono), Menlo, Consolas, monospace;
+
+  /* type scale */
+  --text-display: clamp(2.75rem, 1.4rem + 6vw, 5rem);
+  --text-display--line-height: 1.04;
+  --text-display--letter-spacing: -0.035em;
+  --text-display--font-weight: 600;
+  --text-headline: clamp(2rem, 1.4rem + 2.4vw, 3rem);
+  --text-headline--line-height: 1.1;
+  --text-headline--letter-spacing: -0.03em;
+  --text-headline--font-weight: 600;
+  --text-title-1: 1.75rem;
+  --text-title-1--line-height: 1.15;
+  --text-title-1--letter-spacing: -0.02em;
+  --text-title-1--font-weight: 600;
+  --text-title-2: 1.25rem;
+  --text-title-2--line-height: 1.2;
+  --text-title-2--letter-spacing: -0.015em;
+  --text-title-2--font-weight: 600;
+  --text-title-3: 1.1875rem;
+  --text-title-3--line-height: 1.3;
+  --text-title-3--letter-spacing: -0.01em;
+  --text-title-3--font-weight: 600;
+  --text-body: 1.0625rem;
+  --text-body--line-height: 1.5;
+  --text-callout: 0.9375rem;
+  --text-callout--line-height: 1.45;
+  --text-footnote: 0.8125rem;
+  --text-footnote--line-height: 1.4;
+  --text-caption-1: 0.75rem;
+  --text-caption-1--line-height: 1.35;
+  --text-caption-2: 0.6875rem;
+  --text-caption-2--line-height: 1.3;
+
+  /* radii */
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+
+  /* shadows */
+  --shadow-card: var(--shadow-card);
+  --shadow-raised: var(--shadow-raised);
+  --shadow-float: var(--shadow-float);
+
+  /* blur */
+  --blur-nav: var(--blur-nav);
+
+  /* easing */
+  --ease-out: var(--ease-out);
+  --ease-standard: var(--ease-standard);
+  --ease-spring: var(--ease-spring);
+  --ease-sheet: var(--ease-sheet);
+
+  /* animations */
+  --animate-fade-up: fade-up 0.4s var(--ease-out) both;
+  --animate-msg-in: msg-in 0.3s var(--ease-spring) both;
+  --animate-pop-in: pop-in 0.25s var(--ease-spring) both;
+  --animate-sheet-up: sheet-up 0.35s var(--ease-sheet) both;
+  --animate-toast-in: toast-in 0.25s var(--ease-out) both;
+  --animate-typing: typing-dot 0.9s var(--ease-standard) infinite;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* Printable concierge card: hide everything except #card */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ---- keyframes (§5) ---- */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes msg-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translate(-50%, 12px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+@keyframes typing-dot {
+  0%, 60%, 100% { transform: none; opacity: 0.4; }
+  30% { transform: translateY(-3px); opacity: 1; }
+}
+@keyframes caret-blink { 50% { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---- component classes (§4) ---- */
+@layer components {
+  /* base — always paired with a variant class in markup */
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-full font-medium transition duration-200 ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:opacity-40 disabled:pointer-events-none;
+  }
+  .btn-primary { @apply bg-accent text-white hover:bg-accent-hover hover:scale-[1.02] active:scale-[0.97]; }
+  .btn-secondary { @apply border border-line bg-surface text-ink hover:border-ink-3 hover:bg-surface active:scale-[0.97]; }
+  .btn-ghost { @apply text-accent hover:bg-accent-tint active:scale-[0.97]; }
+  .btn-ghost-danger { @apply text-danger hover:bg-danger-tint active:scale-[0.97]; }
+  .btn-destructive { @apply bg-danger text-white hover:bg-danger-hover active:scale-[0.97]; }
+  .btn-sm { @apply h-9 px-4 text-[14px]; }
+  .btn-md { @apply h-11 px-5 text-[15px]; }
+  .btn-lg { @apply h-[52px] px-7 text-[17px]; }
+
+  .input {
+    @apply h-11 w-full rounded-md border border-line bg-surface px-3.5 text-[16px] text-ink placeholder:text-ink-3 shadow-card transition duration-150 ease-out hover:border-ink-3 focus:border-accent focus:outline-none focus:ring-[3px] focus:ring-focus/20 disabled:bg-surface-2 disabled:text-ink-3;
+  }
+  textarea.input { @apply h-auto py-2.5 min-h-11; }
+
+  .card { @apply rounded-lg border border-hairline bg-surface shadow-card; }
+  .list-card { @apply overflow-hidden rounded-lg border border-hairline bg-surface shadow-card divide-y divide-hairline; }
+  .list-row { @apply flex w-full items-center gap-3 px-5 py-4 text-left transition duration-150 hover:bg-black/[0.02] active:bg-black/[0.04]; }
+
+  .segmented { @apply inline-flex rounded-full bg-black/[0.05] p-1; }
+  .segmented-item { @apply h-8 shrink-0 rounded-full px-4 text-[14px] font-medium text-ink-2 transition duration-200 ease-out hover:text-ink; }
+  .segmented-item-active { @apply bg-surface text-ink shadow-card; }
+
+  .icon-btn {
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-full text-accent transition duration-200 ease-out hover:bg-accent-tint active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus;
+  }
+
+  .spinner {
+    @apply inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent;
+  }
+}
+
+/* ---- chat bubbles (§4.9) ---- */
+.bubble-out {
+  margin-inline-start: auto; max-width: 78%; width: fit-content;
+  border-radius: 22px 22px 6px 22px;
+  background: var(--accent); color: #fff;
+  padding: 10px 16px; font-size: 16px; line-height: 1.45;
+  box-shadow: var(--shadow-card);
+}
+.bubble-in {
+  margin-inline-end: auto; max-width: 78%; width: fit-content;
+  border-radius: 22px 22px 22px 6px;
+  background: var(--bubble-in); color: var(--ink);
+  padding: 10px 16px; font-size: 16px; line-height: 1.45;
+}
+.bubble-note {
+  margin-inline: auto; width: fit-content;
+  border-radius: 999px; background: var(--surface-2); color: var(--ink-2);
+  padding: 4px 12px; font-size: 13px;
+}
+.streaming-caret::after {
+  content: ""; display: inline-block; width: 2px; height: 1em;
+  background: currentColor; margin-left: 2px; vertical-align: -2px;
+  animation: caret-blink 1s steps(2, start) infinite;
+}
+
+/* ---- skeletons (§4.11) ---- */
+.skeleton { position: relative; overflow: hidden;
+  background: var(--surface-2); border-radius: 10px; }
+.skeleton::after { content: ""; position: absolute; inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent,
+    rgb(255 255 255 / 0.6), transparent);
+  animation: shimmer 1.4s infinite; }
+@keyframes shimmer { 100% { transform: translateX(100%); } }
+
+/* select chevron (§4.2) */
+select.input {
+  appearance: none; padding-right: 2.5rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' stroke='%236e6e73' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+}
+
+/* ---- printable concierge card ---- */
 @media print {
   body * {
     visibility: hidden;
@@ -40,8 +282,14 @@ body {
     transform: translateX(-50%);
     margin: 0;
     box-shadow: none !important;
+    border-color: transparent;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
   .no-print {
     display: none !important;
+  }
+  @page {
+    margin: 12mm;
   }
 }

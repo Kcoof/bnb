@@ -9,8 +9,9 @@ import {
   reservations,
 } from "@/lib/db/schema";
 import { requireOrgMember } from "@/lib/auth";
+import { UnreadBadge } from "@/components/StatusPill";
 
-const TABS = ["all", "escalated", "unread"] as const;
+const TABS = ["all", "unread", "escalated"] as const;
 
 export default async function InboxPage({
   searchParams,
@@ -62,64 +63,77 @@ export default async function InboxPage({
     return true;
   });
 
+  const emptyCopy: Record<string, string> = {
+    all: "No conversations yet.",
+    unread: "Nothing unread.",
+    escalated: "Nothing needs you. The AI is handling it.",
+  };
+
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <h1 className="text-2xl font-semibold text-slate-900">Inbox</h1>
+    <div className="space-y-6">
+      <h1 className="text-title-1">Inbox</h1>
 
-      <nav className="flex gap-1">
-        {TABS.map((t) => (
-          <Link
-            key={t}
-            href={`/inbox?tab=${t}`}
-            className={`rounded-lg px-3 py-1.5 text-sm ${
-              tab === t
-                ? "bg-slate-900 font-medium text-white"
-                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
-            }`}
-          >
-            {t === "all" ? "All" : t === "escalated" ? "⚠ Escalated" : "Unread"}
-          </Link>
-        ))}
-      </nav>
+      <div className="overflow-x-auto">
+        <nav className="segmented">
+          {TABS.map((t) => (
+            <Link
+              key={t}
+              href={`/inbox?tab=${t}`}
+              className={`segmented-item ${tab === t ? "segmented-item-active" : ""}`}
+            >
+              {t === "all" ? "All" : t === "unread" ? "Unread" : "Escalated"}
+              {t === "escalated" && tab === "escalated" && (
+                <span className="ml-1.5 h-1.5 w-1.5 rounded-full bg-danger" aria-hidden="true" />
+              )}
+            </Link>
+          ))}
+        </nav>
+      </div>
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+      <div className="list-card">
         {filtered.length === 0 && (
-          <p className="p-4 text-sm text-slate-500">Nothing here.</p>
+          <p className="py-8 text-center text-callout text-ink-2">{emptyCopy[tab]}</p>
         )}
         {filtered.map(({ c, r, p }) => {
           const last = lastMessages.get(c.id);
+          const initial = (r.guestName ?? "?").slice(0, 1).toUpperCase();
           return (
-            <Link
-              key={c.id}
-              href={`/inbox/${c.id}`}
-              className="flex items-center justify-between gap-3 border-b border-slate-100 p-4 last:border-0 hover:bg-slate-50"
-            >
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-slate-900">
+            <Link key={c.id} href={`/inbox/${c.id}`} className="list-row">
+              <span
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-callout font-semibold ${
+                  r.guestName ? "bg-accent-tint text-accent" : "bg-surface-2 text-ink-2"
+                }`}
+              >
+                {initial}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="flex flex-wrap items-center gap-2">
+                  <span className="text-callout font-medium text-ink">
                     {r.guestName ?? "(no guest name)"}
                   </span>
-                  <span className="text-xs text-slate-400">{p.name}</span>
+                  <span className="text-footnote text-ink-2">{p.name}</span>
                   {escalatedIds.has(c.id) && (
-                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
-                      ⚠ escalated
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-danger-tint px-2 py-0.5 text-[11px] font-medium text-danger">
+                      <span className="h-1 w-1 rounded-full bg-current" aria-hidden="true" />
+                      Escalated
                     </span>
                   )}
-                </div>
-                <div className="truncate text-xs text-slate-500">
+                </span>
+                <span className="mt-0.5 block truncate text-callout text-ink-2">
                   {last ? `${last.role === "guest" ? "" : last.role + ": "}${last.content}` : "no messages"}
-                </div>
-              </div>
-              <div className="shrink-0 text-xs text-slate-400">
-                {c.hostUnreadCount > 0 && (
-                  <span className="mr-2 rounded-full bg-blue-600 px-2 py-0.5 text-white">
-                    {c.hostUnreadCount}
-                  </span>
-                )}
-                {c.lastMessageAt
-                  ? new Date(c.lastMessageAt).toISOString().slice(5, 16).replace("T", " ")
-                  : ""}
-              </div>
+                </span>
+              </span>
+              <span className="flex shrink-0 items-center gap-2">
+                {c.hostUnreadCount > 0 && <UnreadBadge count={c.hostUnreadCount} />}
+                <span className="text-caption-1 text-ink-3 tabular-nums">
+                  {c.lastMessageAt
+                    ? new Date(c.lastMessageAt).toISOString().slice(5, 16).replace("T", " ")
+                    : ""}
+                </span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" className="text-ink-3" aria-hidden="true">
+                  <path d="M9 5l7 7-7 7" />
+                </svg>
+              </span>
             </Link>
           );
         })}

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { hostReplyAction } from "@/app/actions/conversations";
+import { Icon } from "@/components/Icon";
 
 export function HostComposer(props: { conversationId: string }) {
   const router = useRouter();
@@ -24,24 +25,30 @@ export function HostComposer(props: { conversationId: string }) {
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
-      <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        rows={3}
-        placeholder="Reply as host — the guest sees this in their chat, resolves escalations, and (if we have their email) they get a notification."
-        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-      />
-      {error && <p className="mt-1 text-sm text-red-700">{error}</p>}
-      <div className="mt-2 flex justify-end">
+    <div>
+      <div className="flex items-end gap-2 rounded-[20px] border border-line bg-surface px-3 py-1.5 transition duration-150 focus-within:border-accent focus-within:ring-[3px] focus-within:ring-focus/20">
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          rows={2}
+          placeholder="Reply as host — the guest sees this in their chat, resolves escalations, and (if we have their email) they get a notification."
+          className="max-h-32 min-h-10 flex-1 resize-none bg-transparent text-[16px] leading-6 outline-none placeholder:text-ink-3"
+        />
         <button
           onClick={onSend}
           disabled={pending || !text.trim()}
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+          aria-label="Send reply"
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent text-white transition duration-150 active:scale-[0.9] disabled:bg-black/[0.08] disabled:text-ink-3"
         >
-          {pending ? "Sending…" : "Send reply"}
+          {pending ? <span className="spinner" /> : <Icon name="send" size={16} />}
         </button>
       </div>
+      {error && (
+        <p className="mt-1.5 flex items-start gap-1.5 text-footnote text-danger">
+          <Icon name="alertCircle" size={14} className="mt-0.5 shrink-0" />
+          {error}
+        </p>
+      )}
     </div>
   );
 }

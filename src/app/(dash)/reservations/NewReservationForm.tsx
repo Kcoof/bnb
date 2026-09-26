@@ -36,7 +36,7 @@ export function NewReservationForm(props: { properties: { id: string; name: stri
     return (
       <button
         onClick={() => setOpen(true)}
-        className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+        className="btn btn-primary btn-md"
       >
         + Add reservation
       </button>
@@ -48,8 +48,8 @@ export function NewReservationForm(props: { properties: { id: string; name: stri
       <h2 className="font-medium text-slate-900">New reservation</h2>
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="sm:col-span-3">
-          <label className="block text-sm font-medium text-slate-700">Property</label>
-          <select name="propertyId" required className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+          <label className="mb-1.5 block text-[13px] font-medium text-ink">Property</label>
+          <select name="propertyId" required className="input">
             {props.properties.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
@@ -58,48 +58,48 @@ export function NewReservationForm(props: { properties: { id: string; name: stri
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700">Guest name</label>
-          <input name="guestName" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+          <label className="mb-1.5 block text-[13px] font-medium text-ink">Guest name</label>
+          <input name="guestName" className="input" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700">Guest email</label>
-          <input name="guestEmail" type="email" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+          <label className="mb-1.5 block text-[13px] font-medium text-ink">Guest email</label>
+          <input name="guestEmail" type="email" className="input" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700">Guest phone</label>
-          <input name="guestPhone" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+          <label className="mb-1.5 block text-[13px] font-medium text-ink">Guest phone</label>
+          <input name="guestPhone" className="input" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700">Check-in</label>
-          <input name="checkIn" type="date" required className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+          <label className="mb-1.5 block text-[13px] font-medium text-ink">Check-in</label>
+          <input name="checkIn" type="date" required className="input" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700">Check-out</label>
-          <input name="checkOut" type="date" required className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+          <label className="mb-1.5 block text-[13px] font-medium text-ink">Check-out</label>
+          <input name="checkOut" type="date" required className="input" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700">Guests</label>
-          <input name="guestsCount" type="number" min="1" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+          <label className="mb-1.5 block text-[13px] font-medium text-ink">Guests</label>
+          <input name="guestsCount" type="number" min="1" className="input" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700">Channel</label>
-          <select name="channel" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+          <label className="mb-1.5 block text-[13px] font-medium text-ink">Channel</label>
+          <select name="channel" className="input">
             {["manual", "direct", "airbnb", "booking", "vrbo", "other"].map((c) => (
               <option key={c}>{c}</option>
             ))}
           </select>
         </div>
         <div className="sm:col-span-2">
-          <label className="block text-sm font-medium text-slate-700">Internal notes</label>
-          <input name="notes" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+          <label className="mb-1.5 block text-[13px] font-medium text-ink">Internal notes</label>
+          <input name="notes" className="input" />
         </div>
       </div>
-      {error && <p className="text-sm text-red-700">{error}</p>}
+      {error && <p className="text-footnote text-danger">{error}</p>}
       <div className="flex gap-2">
-        <button type="submit" disabled={pending} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50">
+        <button type="submit" disabled={pending} className="btn btn-primary btn-md">
           {pending ? "Saving…" : "Create reservation"}
         </button>
-        <button type="button" onClick={() => setOpen(false)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-600">
+        <button type="button" onClick={() => setOpen(false)} className="btn btn-secondary btn-sm">
           Cancel
         </button>
       </div>

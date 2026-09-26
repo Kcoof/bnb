@@ -4,9 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { hostReplyAction } from "@/app/actions/conversations";
 
-// One-tap Approve / Decline on an escalation (Automi spec): sends the guest a
-// clear host decision (optionally with a note), resolves the escalation, and
-// notifies the guest — same path as a manual host reply.
+// One-tap Approve / Decline on an escalation: sends the guest a clear host
+// decision (optionally with a note), resolves the escalation, and notifies.
 export function ApproveDeclineButtons(props: { conversationId: string }) {
   const router = useRouter();
   const [pending, setPending] = useState<"approve" | "decline" | null>(null);
@@ -36,18 +35,18 @@ export function ApproveDeclineButtons(props: { conversationId: string }) {
       <button
         onClick={() => decide("approve")}
         disabled={pending !== null}
-        className="rounded-lg border border-emerald-300 bg-white px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
+        className="btn btn-primary h-8 px-3 text-[13px]"
       >
         {pending === "approve" ? "…" : "Approve"}
       </button>
       <button
         onClick={() => decide("decline")}
         disabled={pending !== null}
-        className="rounded-lg border border-red-300 bg-white px-2.5 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
+        className="btn btn-ghost-danger h-8 px-3 text-[13px]"
       >
         {pending === "decline" ? "…" : "Decline"}
       </button>
-      {error && <span className="text-xs text-red-700">{error}</span>}
+      {error && <span className="text-footnote text-danger">{error}</span>}
     </span>
   );
 }

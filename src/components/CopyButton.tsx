@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { Icon } from "@/components/Icon";
 
+// Ghost icon-pill (§4.1 icon-only) when label is short; keeps full label text
+// when provided. Behavior unchanged: clipboard + fallback + 1.5s confirmation.
 export function CopyButton({
   text,
   label = "Copy",
@@ -15,11 +18,11 @@ export function CopyButton({
   return (
     <button
       type="button"
+      aria-label={copied ? "Copied" : label}
       onClick={async () => {
         try {
           await navigator.clipboard.writeText(text);
         } catch {
-          // clipboard may be blocked — textarea fallback
           const ta = document.createElement("textarea");
           ta.value = text;
           document.body.appendChild(ta);
@@ -31,11 +34,15 @@ export function CopyButton({
         setTimeout(() => setCopied(false), 1500);
       }}
       className={
-        "rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 " +
-        className
+        "btn btn-ghost btn-sm px-3 " + className
       }
     >
-      {copied ? "Copied ✓" : label}
+      {copied ? (
+        <Icon name="check" size={14} />
+      ) : (
+        <Icon name="copy" size={14} />
+      )}
+      <span>{copied ? "Copied" : label}</span>
     </button>
   );
 }

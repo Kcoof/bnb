@@ -30,29 +30,29 @@ export function InviteForm() {
   return (
     <form action={onSubmit} className="space-y-4 rounded-xl border border-slate-200 bg-white p-6">
       <h2 className="font-medium text-slate-900">Invite staff</h2>
-      <p className="text-xs text-slate-500">
+      <p className="text-caption-1 text-ink-2">
         They receive a Supabase invite email and land in this organization on first login.
       </p>
       <div className="grid gap-4 sm:grid-cols-3">
         <div>
-          <label className="block text-sm font-medium text-slate-700">Email</label>
-          <input name="email" type="email" required className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+          <label className="mb-1.5 block text-[13px] font-medium text-ink">Email</label>
+          <input name="email" type="email" required className="input" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700">Name</label>
-          <input name="fullName" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+          <label className="mb-1.5 block text-[13px] font-medium text-ink">Name</label>
+          <input name="fullName" className="input" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700">Role</label>
-          <select name="role" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+          <label className="mb-1.5 block text-[13px] font-medium text-ink">Role</label>
+          <select name="role" className="input">
             <option value="staff">Staff</option>
             <option value="admin">Admin</option>
           </select>
         </div>
       </div>
-      {error && <p className="text-sm text-red-700">{error}</p>}
-      {ok && <p className="text-sm text-emerald-700">Invite sent ✓</p>}
-      <button type="submit" disabled={pending} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50">
+      {error && <p className="text-footnote text-danger">{error}</p>}
+      {ok && <p className="text-footnote text-success">Invite sent ✓</p>}
+      <button type="submit" disabled={pending} className="btn btn-primary btn-md">
         {pending ? "Inviting…" : "Send invite"}
       </button>
     </form>

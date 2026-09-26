@@ -18,7 +18,7 @@ export function RemoveStaffButton(props: { profileId: string }) {
         router.refresh();
       }}
       disabled={pending}
-      className="rounded-lg border border-red-200 bg-white px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+      className="btn btn-ghost-danger btn-sm disabled:opacity-50"
     >
       {pending ? "…" : "Remove"}
     </button>

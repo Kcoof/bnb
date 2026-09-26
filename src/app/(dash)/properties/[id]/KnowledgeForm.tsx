@@ -46,8 +46,8 @@ export function KnowledgeForm(props: {
   }
 
   return (
-    <form action={onSubmit} className="space-y-5 rounded-xl border border-slate-200 bg-white p-6">
-      <p className="text-sm text-slate-500">
+    <form action={onSubmit} className="space-y-5 card p-6">
+      <p className="text-sm text-ink-2">
         The guest AI answers strictly from these fields. Empty fields are hidden from
         it — anything not here gets escalated to you.
       </p>
@@ -55,8 +55,8 @@ export function KnowledgeForm(props: {
         {FIELDS.map((f) =>
           f.long ? (
             <div key={f.name} className="sm:col-span-2">
-              <label className="block text-sm font-medium text-slate-700">{f.label}</label>
-              {f.hint && <p className="text-xs text-slate-400">{f.hint}</p>}
+              <label className="block text-sm font-medium text-ink">{f.label}</label>
+              {f.hint && <p className="text-xs text-ink-3">{f.hint}</p>}
               <textarea
                 name={f.name}
                 defaultValue={props.kb[f.name] ?? ""}
@@ -66,7 +66,7 @@ export function KnowledgeForm(props: {
             </div>
           ) : (
             <div key={f.name}>
-              <label className="block text-sm font-medium text-slate-700">{f.label}</label>
+              <label className="block text-sm font-medium text-ink">{f.label}</label>
               <input
                 name={f.name}
                 defaultValue={props.kb[f.name] ?? ""}
@@ -79,11 +79,11 @@ export function KnowledgeForm(props: {
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-sm font-medium text-slate-700">Extra topics</label>
+          <label className="text-sm font-medium text-ink">Extra topics</label>
           <button
             type="button"
             onClick={() => setExtras([...extras, { topic: "", content: "" }])}
-            className="rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+            className="rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-medium text-ink hover:bg-surface-2"
           >
             + Add topic
           </button>
@@ -113,7 +113,7 @@ export function KnowledgeForm(props: {
             <button
               type="button"
               onClick={() => setExtras(extras.filter((_, j) => j !== i))}
-              className="rounded-lg border border-slate-300 px-2.5 py-1 text-xs text-slate-500 hover:bg-slate-50"
+              className="rounded-lg border border-slate-300 px-2.5 py-1 text-xs text-ink-2 hover:bg-surface-2"
             >
               Remove
             </button>
@@ -121,7 +121,7 @@ export function KnowledgeForm(props: {
         ))}
       </div>
 
-      {error && <p className="text-sm text-red-700">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
       {saved && <p className="text-sm text-emerald-700">Saved ✓</p>}
       <button type="submit" disabled={pending} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50">
         {pending ? "Saving…" : "Save knowledge base"}

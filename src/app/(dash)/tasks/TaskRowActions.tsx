@@ -23,16 +23,17 @@ export function TaskRowActions(props: {
   }
 
   return (
-    <span className="flex items-center gap-1">
+    <span className="flex items-center gap-1.5">
       <select
         defaultValue={props.assignedCleanerId}
         disabled={pending}
         onChange={(e) =>
           e.target.value && run(() => assignCleanerAction(props.taskId, e.target.value))
         }
-        className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs"
+        className="input h-8 w-auto px-2.5 pr-8 text-[13px]"
+        aria-label="Assign cleaner"
       >
-        <option value="">assign cleaner…</option>
+        <option value="">assign…</option>
         {props.cleaners.map((c) => (
           <option key={c.id} value={c.id}>
             {c.name}
@@ -42,18 +43,18 @@ export function TaskRowActions(props: {
       <button
         onClick={() => run(() => hostMarkCleanedAction(props.taskId))}
         disabled={pending}
-        className="rounded-lg border border-emerald-300 bg-white px-2 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
+        className="btn btn-primary h-8 px-3 text-[13px]"
       >
         Mark cleaned
       </button>
       <button
         onClick={() => confirm("Cancel this task?") && run(() => cancelTaskAction(props.taskId))}
         disabled={pending}
-        className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-500 hover:bg-slate-50 disabled:opacity-50"
+        className="btn btn-ghost-danger h-8 px-3 text-[13px]"
       >
         Cancel
       </button>
-      {error && <span className="text-xs text-red-700">{error}</span>}
+      {error && <span className="text-footnote text-danger">{error}</span>}
     </span>
   );
 }

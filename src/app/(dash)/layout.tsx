@@ -1,17 +1,9 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireOrgMember } from "@/lib/auth";
 import { signOutAction } from "@/app/actions/auth";
-
-const NAV = [
-  { href: "/dashboard", label: "Today" },
-  { href: "/inbox", label: "Inbox" },
-  { href: "/board", label: "Status board" },
-  { href: "/tasks", label: "Cleaning tasks" },
-  { href: "/reservations", label: "Reservations" },
-  { href: "/properties", label: "Properties" },
-  { href: "/settings", label: "Settings" },
-];
+import { Icon } from "@/components/Icon";
+import { SideNav, NavBrand } from "./SideNav";
+import { TabBar } from "./TabBar";
 
 export default async function DashLayout({
   children,
@@ -22,29 +14,33 @@ export default async function DashLayout({
   if (!member) redirect("/login");
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      <aside className="hidden w-56 shrink-0 flex-col border-r border-slate-200 bg-white px-4 py-6 md:flex">
-        <div className="px-2 text-sm font-semibold text-slate-900">
-          🏠 bnb-ops
-        </div>
-        <nav className="mt-6 flex flex-1 flex-col gap-1">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-        <form action={signOutAction}>
-          <button className="w-full rounded-lg px-3 py-2 text-left text-sm text-slate-400 hover:bg-slate-100 hover:text-slate-700">
-            Sign out ({member.profile.fullName || member.email})
+    <div className="min-h-screen">
+      {/* Desktop: iCloud-style frosted sidebar */}
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[264px] flex-col border-r border-hairline bg-[var(--sidebar-bg)] backdrop-blur-nav px-3 py-5 md:flex">
+        <NavBrand />
+        <SideNav />
+        <form action={signOutAction} className="px-0 pt-2">
+          <button
+            type="submit"
+            className="flex h-10 w-full items-center gap-2.5 rounded-sm px-3 text-callout font-medium text-ink-2 transition duration-150 hover:bg-black/[0.04] hover:text-ink"
+          >
+            <Icon name="person" size={18} />
+            <span className="truncate">
+              Sign out ({member.profile.fullName || member.email})
+            </span>
           </button>
         </form>
       </aside>
-      <main className="flex-1 overflow-x-hidden px-6 py-8 md:px-10">{children}</main>
+
+      {/* Content */}
+      <div className="md:pl-[264px]">
+        <div className="mx-auto max-w-[1024px] px-5 pb-24 pt-8 md:px-8 md:pb-12 md:pt-12">
+          {children}
+        </div>
+      </div>
+
+      {/* Mobile: iOS bottom tab bar */}
+      <TabBar />
     </div>
   );
 }

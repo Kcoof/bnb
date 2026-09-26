@@ -35,7 +35,7 @@ export default async function PropertyPage({
     .limit(1);
   const row = rows[0];
   if (!row) {
-    return <p className="text-sm text-slate-500">Property not found.</p>;
+    return <p className="text-sm text-ink-2">Property not found.</p>;
   }
   const { p, kb } = row;
 
@@ -59,10 +59,10 @@ export default async function PropertyPage({
     <div className="mx-auto max-w-4xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <Link href="/properties" className="text-xs text-slate-500 hover:underline">
+          <Link href="/properties" className="text-xs text-ink-2 hover:text-accent hover:underline">
             ← Properties
           </Link>
-          <h1 className="text-2xl font-semibold text-slate-900">{p.name}</h1>
+          <h1 className="text-title-1">{p.name}</h1>
         </div>
         <div className="flex items-center gap-2">
           {p.conciergeToken && (
@@ -77,21 +77,19 @@ export default async function PropertyPage({
         </div>
       </div>
 
-      <nav className="flex gap-1 border-b border-slate-200">
-        {TABS.map((t) => (
-          <Link
-            key={t}
-            href={`/properties/${p.id}?tab=${t}`}
-            className={`rounded-t-lg px-4 py-2 text-sm ${
-              tab === t
-                ? "border-b-2 border-slate-900 font-medium text-slate-900"
-                : "text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            {t === "kb" ? "Knowledge base" : t === "ics" ? "ICS & sync" : t[0].toUpperCase() + t.slice(1)}
-          </Link>
-        ))}
-      </nav>
+      <nav className="overflow-x-auto">
+          <div className="segmented">
+            {TABS.map((t) => (
+              <Link
+                key={t}
+                href={`/properties/${p.id}?tab=${t}`}
+                className={`segmented-item ${tab === t ? "segmented-item-active" : ""}`}
+              >
+                {t === "kb" ? "Knowledge base" : t === "ics" ? "ICS & sync" : t[0].toUpperCase() + t.slice(1)}
+              </Link>
+            ))}
+          </div>
+        </nav>
 
       {tab === "details" && (
         <PropertyDetailsForm
@@ -144,22 +142,22 @@ export default async function PropertyPage({
       )}
 
       {tab === "history" && (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <div className="overflow-hidden card">
           {history.length === 0 && (
-            <p className="p-4 text-sm text-slate-500">No events yet.</p>
+            <p className="p-4 text-sm text-ink-2">No events yet.</p>
           )}
           {history.map((e) => (
-            <div key={e.id} className="border-b border-slate-100 p-3 text-sm last:border-0">
-              <span className="font-medium text-slate-800">{e.action}</span>
-              <span className="ml-2 text-slate-400">
+            <div key={e.id} className="border-b border-hairline p-3 text-sm last:border-0">
+              <span className="font-medium text-ink">{e.action}</span>
+              <span className="ml-2 text-ink-3">
                 {e.actorType}
                 {e.actorId ? ` (${e.actorId.slice(0, 8)})` : ""}
               </span>
-              <span className="float-right text-xs text-slate-400">
+              <span className="float-right text-xs text-ink-3">
                 {fmtLocal(new Date(e.createdAt), p.timezone)}
               </span>
               {Object.keys(e.metadata as object).length > 0 && (
-                <div className="mt-1 text-xs text-slate-500">
+                <div className="mt-1 text-xs text-ink-2">
                   {JSON.stringify(e.metadata)}
                 </div>
               )}

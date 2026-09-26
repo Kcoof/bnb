@@ -14,6 +14,7 @@ import { HostComposer } from "./HostComposer";
 import { EscalationBannerActions } from "./EscalationBannerActions";
 import { ApproveDeclineButtons } from "./ApproveDeclineButtons";
 import { CopyButton } from "@/components/CopyButton";
+import { Icon } from "@/components/Icon";
 import { chatUrl } from "@/lib/mail";
 
 export default async function ConversationPage({
@@ -33,7 +34,7 @@ export default async function ConversationPage({
     .where(and(eq(conversations.id, id), eq(conversations.orgId, member.profile.orgId)))
     .limit(1);
   const row = rows[0];
-  if (!row) return <p className="text-sm text-slate-500">Conversation not found.</p>;
+  if (!row) return <p className="text-callout text-ink-2">Conversation not found.</p>;
   const { c, r, p } = row;
 
   const transcript = await db
@@ -54,67 +55,81 @@ export default async function ConversationPage({
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div>
-        <Link href="/inbox" className="text-xs text-slate-500 hover:underline">
-          ← Inbox
+    <div className="space-y-6">
+      {/* Sticky frosted header */}
+      <div className="sticky top-0 z-20 -mx-5 border-b border-hairline bg-[var(--nav-bg)] px-5 py-3 backdrop-blur-nav md:-mx-8 md:px-8">
+        <Link href="/inbox" className="text-callout text-accent hover:underline">
+          ‹ Inbox
         </Link>
-        <h1 className="text-xl font-semibold text-slate-900">
-          {r.guestName ?? "(no guest name)"} — {p.name}
-        </h1>
-        <div className="text-sm text-slate-500">
-          {r.checkIn} → {r.checkOut} ·{" "}
-          <Link href={`/reservations/${r.id}`} className="hover:underline">
+        <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2">
+          <h1 className="text-title-3">{r.guestName ?? "(no guest name)"} — {p.name}</h1>
+        </div>
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-footnote text-ink-2">
+          {r.checkIn} → {r.checkOut} ·
+          <Link href={`/reservations/${r.id}`} className="text-accent hover:underline">
             reservation
           </Link>
           {r.chatToken && (
-            <>
-              {" · "}
-              <CopyButton text={chatUrl(r.chatToken)} label="Copy chat link" />
-            </>
+            <CopyButton text={chatUrl(r.chatToken)} label="Copy chat link" className="h-7 px-2 text-[12px]" />
           )}
         </div>
       </div>
 
       {openEscs.map((e) => (
-        <div key={e.id} className="rounded-xl border border-red-200 bg-red-50 p-4">
-          <div className="font-medium text-red-800">
-            ⚠ {e.reason.replace(/_/g, " ")}
+        <div key={e.id} className="rounded-lg border border-hairline bg-danger-tint p-5">
+          <div className="flex items-center gap-2 text-callout font-semibold text-danger">
+            <Icon name="alert" size={16} />
+            {e.reason.replace(/_/g, " ")}
             {e.urgency === "high" ? " — URGENT" : ""}
           </div>
-          <div className="mt-1 text-sm text-red-700">{e.summary}</div>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
+          <div className="mt-1 text-callout text-ink">{e.summary}</div>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
             <ApproveDeclineButtons conversationId={c.id} />
             <EscalationBannerActions escalationId={e.id} />
           </div>
         </div>
       ))}
 
-      <div className="space-y-2">
-        {transcript.map((m) => (
-          <div
-            key={m.id}
-            className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
-              m.role === "guest"
-                ? "bg-slate-100 text-slate-800"
-                : m.role === "host"
-                  ? "ml-auto bg-blue-100 text-blue-900"
-                  : m.role === "system_note"
-                    ? "mx-auto bg-amber-50 text-amber-800 text-xs"
-                    : "ml-auto bg-emerald-50 text-emerald-900"
-            }`}
-          >
-            <div className="mb-0.5 text-[10px] uppercase tracking-wide opacity-60">
-              {m.role}
-              {m.escalated ? " · ⚠ escalated" : ""}
-              {m.model ? ` · ${m.model}` : ""}
+      {/* Transcript — Messages-grade */}
+      <div className="mx-auto max-w-[720px] space-y-2">
+        {transcript.length === 0 && (
+          <p className="py-8 text-center text-callout text-ink-2">No messages yet.</p>
+        )}
+        {transcript.map((m) => {
+          if (m.role === "system_note") {
+            return (
+              <div key={m.id} className="bubble-note">{m.content}</div>
+            );
+          }
+          if (m.role === "guest") {
+            return (
+              <div key={m.id} className="bubble-in">{m.content}</div>
+            );
+          }
+          if (m.role === "host") {
+            return (
+              <div key={m.id} className="bubble-out">{m.content}</div>
+            );
+          }
+          // assistant
+          return (
+            <div key={m.id} className="animate-msg-in">
+              <div className="mb-0.5 ml-1 flex items-center gap-1.5 text-caption-1 text-ink-2">
+                Concierge
+                {m.escalated && <Icon name="alert" size={12} className="text-danger" />}
+                {m.model && <span className="text-ink-3">· {m.model}</span>}
+              </div>
+              <div className="w-fit max-w-[78%] rounded-[22px] rounded-bl-[6px] bg-surface px-4 py-2.5 text-[16px] leading-relaxed text-ink shadow-card">
+                {m.content}
+              </div>
             </div>
-            {m.content}
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      <HostComposer conversationId={c.id} />
+      <div className="mx-auto max-w-[720px]">
+        <HostComposer conversationId={c.id} />
+      </div>
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { signInAction, signUpAction } from "@/app/actions/auth";
+import { Icon } from "@/components/Icon";
 
 export default function LoginPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -28,52 +29,43 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="text-xl font-semibold text-slate-900">
+    <main className="flex min-h-screen items-center justify-center bg-canvas px-6">
+      <div className="w-full max-w-[400px] animate-fade-up">
+        <div className="flex justify-center">
+          <span className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-ink text-sm font-semibold text-white">
+            A
+          </span>
+        </div>
+        <h1 className="mt-5 text-center text-title-1">
           {mode === "signin" ? "Sign in" : "Create your account"}
         </h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1.5 text-center text-callout text-ink-2">
           AI operations for short-term rental managers
         </p>
 
-        <form action={onSubmit} className="mt-6 space-y-4">
+        <form action={onSubmit} className="mt-8 space-y-4">
           {mode === "signup" && (
             <>
               <div>
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="mb-1.5 block text-[13px] font-medium text-ink">
                   Your name
                 </label>
-                <input
-                  name="fullName"
-                  required
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                />
+                <input name="fullName" required className="input h-12" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="mb-1.5 block text-[13px] font-medium text-ink">
                   Company / team name
                 </label>
-                <input
-                  name="orgName"
-                  required
-                  placeholder="Acme Stays"
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                />
+                <input name="orgName" required placeholder="Acme Stays" className="input h-12" />
               </div>
             </>
           )}
           <div>
-            <label className="block text-sm font-medium text-slate-700">Email</label>
-            <input
-              name="email"
-              type="email"
-              required
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-            />
+            <label className="mb-1.5 block text-[13px] font-medium text-ink">Email</label>
+            <input name="email" type="email" required className="input h-12" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700">
+            <label className="mb-1.5 block text-[13px] font-medium text-ink">
               Password
             </label>
             <input
@@ -81,12 +73,13 @@ export default function LoginPage() {
               type="password"
               required
               minLength={8}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              className="input h-12"
             />
           </div>
 
           {error && (
-            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+            <p className="flex items-start gap-1.5 text-footnote text-danger">
+              <Icon name="alertCircle" size={14} className="mt-0.5 shrink-0" />
               {error}
             </p>
           )}
@@ -94,19 +87,16 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={pending}
-            className="w-full rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+            className="btn btn-primary btn-lg w-full"
           >
-            {pending
-              ? "Working…"
-              : mode === "signin"
-                ? "Sign in"
-                : "Create account"}
+            {pending && <span className="spinner" />}
+            {mode === "signin" ? "Sign in" : "Create account"}
           </button>
         </form>
 
         <button
           onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-          className="mt-4 w-full text-sm text-slate-500 hover:text-slate-800"
+          className="mt-5 w-full text-center text-callout text-accent hover:underline"
         >
           {mode === "signin"
             ? "No account yet? Create one"

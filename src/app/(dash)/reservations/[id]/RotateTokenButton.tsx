@@ -22,11 +22,11 @@ export function RotateTokenButton(props: { reservationId: string }) {
           else router.refresh();
         }}
         disabled={pending}
-        className="rounded-lg border border-red-200 bg-white px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+        className="btn btn-ghost-danger btn-sm disabled:opacity-50"
       >
         {pending ? "Rotating…" : "Rotate link (kills old)" }
       </button>
-      {error && <span className="text-xs text-red-700">{error}</span>}
+      {error && <span className="text-footnote text-danger">{error}</span>}
     </div>
   );
 }

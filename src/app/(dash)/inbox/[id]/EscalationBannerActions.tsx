@@ -11,7 +11,7 @@ export function EscalationBannerActions(props: { escalationId: string }) {
 
   return (
     <span className="flex items-center gap-2">
-      <span className="text-xs text-red-600">
+      <span className="text-footnote text-ink-2">
         Reply below to resolve + notify the guest,
       </span>
       <button
@@ -24,11 +24,11 @@ export function EscalationBannerActions(props: { escalationId: string }) {
           else router.refresh();
         }}
         disabled={pending}
-        className="rounded-lg border border-red-300 bg-white px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+        className="btn btn-secondary h-8 px-3 text-[13px]"
       >
         {pending ? "…" : "or mark handled offline"}
       </button>
-      {error && <span className="text-xs text-red-700">{error}</span>}
+      {error && <span className="text-footnote text-danger">{error}</span>}
     </span>
   );
 }

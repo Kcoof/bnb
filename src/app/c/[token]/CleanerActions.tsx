@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Icon } from "@/components/Icon";
 import {
   cleanerDoneAction,
   cleanerReportProblemAction,
@@ -35,8 +36,13 @@ export function CleanerActions(props: {
 
   if (props.closed) {
     return (
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
-        This task is closed. Thank you!
+      <div className="rounded-lg bg-success-tint p-5 text-center">
+        <div className="mx-auto w-fit text-success">
+          <Icon name="check" size={24} />
+        </div>
+        <p className="mt-2 text-callout font-semibold text-ink">
+          This task is done. Thank you!
+        </p>
       </div>
     );
   }
@@ -47,14 +53,15 @@ export function CleanerActions(props: {
         <button
           onClick={() => run(() => cleanerStartAction(props.token), "Cleaning started")}
           disabled={pending}
-          className="w-full rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-50"
+          className="btn btn-primary h-[52px] w-full rounded-md text-[17px] font-semibold"
         >
+          {pending ? <span className="spinner" /> : null}
           Start cleaning
         </button>
       )}
 
-      <div className="rounded-xl border border-slate-200 bg-white p-4">
-        <label className="block text-sm font-medium text-slate-700">
+      <div className="card p-5">
+        <label className="mb-1.5 block text-[13px] font-medium text-ink">
           Notes (optional)
         </label>
         <textarea
@@ -62,19 +69,20 @@ export function CleanerActions(props: {
           onChange={(e) => setNotes(e.target.value)}
           rows={2}
           placeholder="Anything the host should know…"
-          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          className="input"
         />
         <button
-          onClick={() => run(() => cleanerDoneAction(props.token, notes), "Marked cleaned ✓")}
+          onClick={() => run(() => cleanerDoneAction(props.token, notes), "Marked cleaned")}
           disabled={pending}
-          className="mt-2 w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+          className="mt-3 h-[52px] w-full rounded-md bg-success text-[17px] font-semibold text-white transition duration-150 active:scale-[0.98] hover:bg-[#136c34] disabled:opacity-50"
         >
+          {pending ? <span className="spinner" /> : null}
           Mark cleaned
         </button>
       </div>
 
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-        <label className="block text-sm font-medium text-amber-900">
+      <div className="rounded-lg border border-hairline bg-warning-tint p-5">
+        <label className="mb-1.5 block text-[13px] font-medium text-warning">
           Report a problem
         </label>
         <textarea
@@ -82,21 +90,31 @@ export function CleanerActions(props: {
           onChange={(e) => setProblem(e.target.value)}
           rows={2}
           placeholder="What's wrong? (missing supplies, damage, couldn't access…)"
-          className="mt-1 w-full rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm"
+          className="input"
         />
         <button
           onClick={() =>
             run(() => cleanerReportProblemAction(props.token, problem), "Problem reported to the host")
           }
           disabled={pending || !problem.trim()}
-          className="mt-2 w-full rounded-xl border border-amber-400 bg-white px-4 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100 disabled:opacity-50"
+          className="mt-3 h-[52px] w-full rounded-md border border-line bg-surface text-[17px] font-semibold text-danger transition duration-150 active:scale-[0.98] hover:bg-danger-tint disabled:opacity-50"
         >
           Send to host
         </button>
       </div>
 
-      {error && <p className="text-sm text-red-700">{error}</p>}
-      {ok && <p className="text-sm text-emerald-700">{ok}</p>}
+      {error && (
+        <p className="flex items-start gap-1.5 text-footnote text-danger">
+          <Icon name="alertCircle" size={14} className="mt-0.5 shrink-0" />
+          {error}
+        </p>
+      )}
+      {ok && (
+        <p className="flex items-start gap-1.5 text-footnote text-success">
+          <Icon name="check" size={14} className="mt-0.5 shrink-0" />
+          {ok}
+        </p>
+      )}
     </div>
   );
 }
