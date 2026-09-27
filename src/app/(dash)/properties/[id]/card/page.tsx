@@ -24,7 +24,7 @@ export default async function PropertyCardPage({
       .limit(1)
   )[0];
   if (!prop?.conciergeToken) {
-    return <p className="text-sm text-slate-500">Property not found or no concierge QR.</p>;
+    return <p className="text-sm text-ink-2">Property not found or no concierge QR.</p>;
   }
 
   const url = chatUrl(prop.conciergeToken);
@@ -76,7 +76,7 @@ export default async function PropertyCardPage({
         </div>
       </div>
 
-      <p className="no-print mx-auto mt-4 max-w-sm text-center text-xs text-stone-400">
+      <p className="no-print mx-auto mt-4 max-w-sm text-center text-xs text-ink-3">
         Print on card stock, trim to the border, and place it on the fridge, nightstand, or
         welcome folder. The QR never expires and works for every guest.
       </p>

@@ -13,6 +13,7 @@ import {
 import { requireOrgMember } from "@/lib/auth";
 import { StatusPill } from "@/components/StatusPill";
 import { CopyButton } from "@/components/CopyButton";
+import { Icon } from "@/components/Icon";
 import { appUrl, chatUrl, renderSnippet } from "@/lib/mail";
 import { EditReservationForm } from "./EditReservationForm";
 import { RotateTokenButton } from "./RotateTokenButton";
@@ -33,7 +34,7 @@ export default async function ReservationPage({
     .where(and(eq(reservations.id, id), eq(reservations.orgId, member.profile.orgId)))
     .limit(1);
   const row = rows[0];
-  if (!row) return <p className="text-sm text-ink-2">Reservation not found.</p>;
+  if (!row) return <p className="text-callout text-ink-2">Reservation not found.</p>;
   const { r, p } = row;
 
   const conv = (
@@ -70,13 +71,13 @@ export default async function ReservationPage({
   return (
     <div className="mx-auto max-w-4xl space-y-8">
       <div>
-        <Link href="/reservations" className="text-xs text-ink-2 hover:text-accent hover:underline">
+        <Link href="/reservations" className="text-footnote text-ink-2 hover:text-accent hover:underline">
           ← Reservations
         </Link>
         <h1 className="text-title-1">
           {r.guestName ?? "(no guest name)"} — {p.name}
         </h1>
-        <div className="mt-1 flex items-center gap-3 text-sm text-ink-2">
+        <div className="mt-1 flex items-center gap-3 text-callout text-ink-2">
           {r.checkIn} → {r.checkOut} · {r.channel} · <StatusPill status={r.status} />
           {r.isHold && <span className="text-warning">blocked dates (iCal hold)</span>}
         </div>
@@ -88,20 +89,20 @@ export default async function ReservationPage({
           <div className="mt-3 flex flex-wrap items-start gap-6">
             <div className="min-w-0 flex-1 space-y-2">
               <div className="flex items-center gap-2">
-                <code className="truncate rounded bg-surface-2 px-2 py-1 text-xs text-ink-2">
+                <code className="truncate rounded bg-surface-2 px-2 py-1 text-footnote text-ink-2">
                   {chatLink}
                 </code>
                 <CopyButton text={chatLink} label="Copy link" />
               </div>
               {snippet && (
                 <div className="flex items-start gap-2">
-                  <p className="line-clamp-3 flex-1 rounded bg-surface-2 px-2 py-1 text-xs text-ink-2">
+                  <p className="line-clamp-3 flex-1 rounded bg-surface-2 px-2 py-1 text-footnote text-ink-2">
                     {snippet}
                   </p>
                   <CopyButton text={snippet} label="Copy snippet" />
                 </div>
               )}
-              <p className="text-xs text-ink-3">
+              <p className="text-footnote text-ink-3">
                 Valid from 3 days before check-in until 2 days after checkout.
                 Paste the snippet into the booking channel thread — guests get the
                 link without any email address.
@@ -112,7 +113,7 @@ export default async function ReservationPage({
               <div className="text-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={qrDataUrl} alt="Guest chat QR code" width={140} height={140} className="rounded-lg border border-hairline" />
-                <p className="mt-1 text-xs text-ink-3">QR — print for the property</p>
+                <p className="mt-1 text-footnote text-ink-3">QR — print for the property</p>
               </div>
             )}
           </div>
@@ -138,14 +139,14 @@ export default async function ReservationPage({
 
       <section className="card p-6">
         <h2 className="font-semibold text-ink">Scheduled emails</h2>
-        <div className="mt-2 space-y-1 text-sm">
+        <div className="mt-2 space-y-1 text-callout">
           {scheduled.length === 0 && (
             <p className="text-ink-2">None scheduled.</p>
           )}
           {scheduled.map((m) => (
             <div key={m.id} className="flex items-center justify-between border-b border-hairline py-1 last:border-0">
               <span className="text-ink">{m.type}</span>
-              <span className="flex items-center gap-2 text-xs text-ink-2">
+              <span className="flex items-center gap-2 text-footnote text-ink-2">
                 {new Date(m.sendAt).toISOString().slice(0, 16).replace("T", " ")}
                 <StatusPill status={m.status} />
                 {m.error && <span className="text-warning">{m.error}</span>}
@@ -158,7 +159,7 @@ export default async function ReservationPage({
       {task && (
         <section className="card p-6">
           <h2 className="font-semibold text-ink">Cleaning task</h2>
-          <div className="mt-2 flex items-center justify-between text-sm">
+          <div className="mt-2 flex items-center justify-between text-callout">
             <Link href="/tasks" className="text-ink hover:text-accent hover:underline">
               due {task.dueAt ? new Date(task.dueAt).toISOString().slice(0, 16).replace("T", " ") : "—"}
             </Link>
@@ -174,35 +175,38 @@ export default async function ReservationPage({
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-ink">Conversation</h2>
           {conv && (
-            <Link href={`/inbox/${conv.id}`} className="text-xs text-ink-2 hover:text-accent hover:underline">
+            <Link href={`/inbox/${conv.id}`} className="text-footnote text-ink-2 hover:text-accent hover:underline">
               open in inbox →
             </Link>
           )}
         </div>
         <div className="mt-3 max-h-96 space-y-2 overflow-y-auto">
           {transcript.length === 0 && (
-            <p className="text-sm text-ink-2">No messages yet.</p>
+            <p className="text-callout text-ink-2">No messages yet.</p>
           )}
-          {transcript.map((m) => (
-            <div
-              key={m.id}
-              className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
-                m.role === "guest"
-                  ? "bg-slate-100 text-ink"
-                  : m.role === "host"
-                    ? "ml-auto bg-blue-100 text-blue-900"
-                    : m.role === "system_note"
-                      ? "mx-auto bg-amber-50 text-amber-800"
-                      : "ml-auto bg-emerald-50 text-emerald-900"
-              }`}
-            >
-              <div className="mb-0.5 text-[10px] uppercase tracking-wide opacity-60">
-                {m.role}
-                {m.escalated ? " · ⚠ escalated" : ""}
+          {transcript.map((m) => {
+            if (m.role === "system_note") {
+              return <div key={m.id} className="bubble-note">{m.content}</div>;
+            }
+            if (m.role === "guest") {
+              return <div key={m.id} className="bubble-in">{m.content}</div>;
+            }
+            if (m.role === "host") {
+              return <div key={m.id} className="bubble-out">{m.content}</div>;
+            }
+            return (
+              <div key={m.id} className="animate-msg-in">
+                <div className="mb-0.5 ml-1 flex items-center gap-1.5 text-caption-1 text-ink-2">
+                  Concierge
+                  {m.escalated && <Icon name="alert" size={12} className="text-danger" />}
+                  {m.model && <span className="text-ink-3">· {m.model}</span>}
+                </div>
+                <div className="w-fit max-w-[78%] rounded-[22px] rounded-bl-[6px] bg-surface px-4 py-2.5 text-[16px] leading-relaxed text-ink shadow-card">
+                  {m.content}
+                </div>
               </div>
-              {m.content}
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
     </div>

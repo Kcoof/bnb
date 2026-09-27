@@ -21,11 +21,11 @@ export function TemplateEditor(props: {
   const [pending, setPending] = useState(false);
 
   return (
-    <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-6">
+    <div className="space-y-3 rounded-xl border border-hairline bg-white p-6">
       <div className="flex items-center justify-between">
-        <h2 className="font-medium text-slate-900">{props.label}</h2>
+        <h2 className="font-medium text-ink">{props.label}</h2>
         {props.initialBody && (
-          <span className="text-xs text-emerald-700">customized</span>
+          <span className="text-xs text-success">customized</span>
         )}
       </div>
       <div>
@@ -79,13 +79,13 @@ export function TemplateEditor(props: {
             const result = await sendTestEmailAction(testTo);
             setTestResult(result?.error ? `Error: ${result.error}` : "Test email sent ✓");
           }}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+          className="btn btn-secondary btn-sm"
         >
           Send test email
         </button>
         {saved && <span className="text-footnote text-success">Saved ✓</span>}
         {error && <span className="text-footnote text-danger">{error}</span>}
-        {testResult && <span className="text-sm text-slate-600">{testResult}</span>}
+        {testResult && <span className="text-sm text-ink-2">{testResult}</span>}
       </div>
     </div>
   );

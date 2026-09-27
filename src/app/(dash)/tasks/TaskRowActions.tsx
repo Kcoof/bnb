@@ -33,7 +33,7 @@ export function TaskRowActions(props: {
         className="input h-8 w-auto px-2.5 pr-8 text-[13px]"
         aria-label="Assign cleaner"
       >
-        <option value="">assign…</option>
+        <option value="">assign cleaner…</option>
         {props.cleaners.map((c) => (
           <option key={c.id} value={c.id}>
             {c.name}

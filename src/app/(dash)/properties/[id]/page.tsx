@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { events, properties, propertyKnowledge } from "@/lib/db/schema";
 import { requireOrgMember } from "@/lib/auth";
 import { StatusPill } from "@/components/StatusPill";
+import { Icon } from "@/components/Icon";
 import { fmtLocal } from "@/lib/time";
 import { PropertyDetailsForm } from "./PropertyDetailsForm";
 import { KnowledgeForm } from "./KnowledgeForm";
@@ -68,10 +69,10 @@ export default async function PropertyPage({
           {p.conciergeToken && (
             <Link
               href={`/properties/${p.id}/card`}
-              className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:border-stone-400"
+              className="btn btn-secondary btn-sm"
             >
-              📇 Concierge QR card
-            </Link>
+              <Icon name="qr" size={14} />
+              Concierge QR card</Link>
           )}
           <StatusPill status={p.status} />
         </div>

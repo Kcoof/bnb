@@ -25,6 +25,7 @@ export function ChatWidget(props: {
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const lastTimestamp = useRef<string | null>(null);
 
@@ -40,6 +41,7 @@ export function ChatWidget(props: {
           return;
         }
         const data = (await res.json()) as { messages: Msg[] };
+        if (!cancelled) setLoaded(true);
         if (cancelled || data.messages?.length) {
           setMessages((prev) => {
             const seen = new Set(prev.map((m) => m.createdAt));
@@ -145,6 +147,13 @@ export function ChatWidget(props: {
             check-in, checkout, the neighborhood.
           </div>
 
+          {!loaded && (
+            <>
+              <div className="skeleton h-10 w-2/3 rounded-[22px]" />
+              <div className="skeleton ml-auto h-10 w-1/2 rounded-[22px]" />
+              <div className="skeleton h-10 w-3/5 rounded-[22px]" />
+            </>
+          )}
           {messages.map((m, i) => {
             const prev = messages[i - 1];
             const grouped =
@@ -228,7 +237,7 @@ export function ChatWidget(props: {
               rows={1}
               placeholder="Type your question…"
               maxLength={2000}
-              className="max-h-32 min-h-10 flex-1 resize-none bg-transparent text-[16px] leading-6 outline-none placeholder:text-ink-3"
+              className="max-h-32 min-h-10 flex-1 resize-none [field-sizing:content] bg-transparent text-[16px] leading-6 outline-none placeholder:text-ink-3"
             />
             <button
               onClick={send}

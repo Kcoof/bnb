@@ -63,22 +63,55 @@ export function StatusChangeMenu(props: { propertyId: string; current: string })
       </button>
 
       {open && (
-        <div
-          role="menu"
-          className="absolute end-0 z-40 mt-2 min-w-[220px] origin-top animate-pop-in rounded-md border border-hairline bg-surface p-1.5 shadow-float"
-        >
-          {options.map((opt) => (
+        <>
+          {/* Desktop popover */}
+          <div
+            role="menu"
+            className="absolute end-0 z-40 mt-2 hidden min-w-[220px] origin-top animate-pop-in rounded-md border border-hairline bg-surface p-1.5 shadow-float md:block"
+          >
+            {options.map((opt) => (
+              <button
+                key={opt}
+                role="menuitem"
+                onClick={() => change(opt)}
+                className="flex h-9 w-full items-center gap-2 rounded-[10px] px-3 text-callout text-ink transition duration-100 hover:bg-black/[0.04]"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-ink-3" aria-hidden="true" />
+                {opt.replace(/_/g, " ")}
+              </button>
+            ))}
+          </div>
+
+          {/* Mobile bottom sheet */}
+          <div
+            className="fixed inset-0 z-50 bg-[var(--overlay)] md:hidden"
+            onClick={() => setOpen(false)}
+            aria-hidden="true"
+          />
+          <div
+            role="menu"
+            className="fixed inset-x-3 bottom-3 z-50 rounded-xl bg-surface p-2 pb-[max(env(safe-area-inset-bottom),8px)] shadow-float animate-sheet-up md:hidden"
+          >
+            <div className="mx-auto mb-2 h-1 w-9 rounded-full bg-black/15" />
+            {options.map((opt) => (
+              <button
+                key={opt}
+                role="menuitem"
+                onClick={() => change(opt)}
+                className="flex h-12 w-full items-center gap-2.5 rounded-[10px] px-3 text-callout text-ink transition duration-100 hover:bg-black/[0.04]"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-ink-3" aria-hidden="true" />
+                {opt.replace(/_/g, " ")}
+              </button>
+            ))}
             <button
-              key={opt}
-              role="menuitem"
-              onClick={() => change(opt)}
-              className="flex h-9 w-full items-center gap-2 rounded-[10px] px-3 text-callout text-ink transition duration-100 hover:bg-black/[0.04]"
+              onClick={() => setOpen(false)}
+              className="flex h-12 w-full items-center justify-center rounded-[10px] text-callout font-semibold text-accent"
             >
-              <span className="h-1.5 w-1.5 rounded-full bg-ink-3" aria-hidden="true" />
-              {opt.replace(/_/g, " ")}
+              Cancel
             </button>
-          ))}
-        </div>
+          </div>
+        </>
       )}
       {error && <p className="mt-1 text-footnote text-danger">{error}</p>}
     </div>

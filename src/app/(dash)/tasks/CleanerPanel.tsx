@@ -25,10 +25,10 @@ export function CleanerPanel(props: {
   }
 
   return (
-    <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+    <div className="space-y-3 rounded-xl border border-hairline bg-white p-4">
       {props.cleaners.map((c) => (
         <div key={c.id} className="flex items-center justify-between text-sm">
-          <span className="font-medium text-slate-800">{c.name}</span>
+          <span className="font-medium text-ink">{c.name}</span>
           <span className="text-caption-1 text-ink-2">
             {c.email || "no email"} {c.phone ? `· ${c.phone}` : ""}
           </span>
@@ -39,18 +39,18 @@ export function CleanerPanel(props: {
           No cleaners yet — add one to enable assignment emails.
         </p>
       )}
-      <form action={onSubmit} className="flex flex-wrap items-end gap-2 border-t border-slate-100 pt-3">
+      <form action={onSubmit} className="flex flex-wrap items-end gap-2 border-t border-hairline pt-3">
         <div>
           <label className="mb-1 block text-[13px] font-medium text-ink">Name</label>
-          <input name="name" required className="input h-9 w-auto px-2.5 text-[14px]" />
+          <input name="name" required className="input h-9 w-auto px-2.5 text-[16px]" />
         </div>
         <div>
           <label className="mb-1 block text-[13px] font-medium text-ink">Email</label>
-          <input name="email" type="email" className="input h-9 w-auto px-2.5 text-[14px]" />
+          <input name="email" type="email" className="input h-9 w-auto px-2.5 text-[16px]" />
         </div>
         <div>
           <label className="mb-1 block text-[13px] font-medium text-ink">Phone</label>
-          <input name="phone" className="input h-9 w-auto px-2.5 text-[14px]" />
+          <input name="phone" className="input h-9 w-auto px-2.5 text-[16px]" />
         </div>
         <button type="submit" disabled={pending} className="btn btn-primary btn-sm">
           {pending ? "…" : "Add cleaner"}

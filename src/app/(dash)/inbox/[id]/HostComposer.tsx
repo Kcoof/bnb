@@ -32,7 +32,7 @@ export function HostComposer(props: { conversationId: string }) {
           onChange={(e) => setText(e.target.value)}
           rows={2}
           placeholder="Reply as host — the guest sees this in their chat, resolves escalations, and (if we have their email) they get a notification."
-          className="max-h-32 min-h-10 flex-1 resize-none bg-transparent text-[16px] leading-6 outline-none placeholder:text-ink-3"
+          className="max-h-32 min-h-10 flex-1 resize-none [field-sizing:content] bg-transparent text-[16px] leading-6 outline-none placeholder:text-ink-3"
         />
         <button
           onClick={onSend}

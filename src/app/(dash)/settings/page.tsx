@@ -21,7 +21,7 @@ export default async function SettingsPage() {
     <div className="mx-auto max-w-3xl space-y-6">
       <h1 className="text-title-1">Settings</h1>
       <nav className="flex gap-2 text-sm">
-        <span className="rounded-lg bg-slate-900 px-3 py-1.5 font-medium text-white">Organization</span>
+        <span className="segmented-item segmented-item-active">Organization</span>
         <Link href="/settings/team" className="rounded-lg border border-hairline bg-white px-3 py-1.5 text-ink-2 hover:bg-surface-2">Team</Link>
         <Link href="/settings/templates" className="rounded-lg border border-hairline bg-white px-3 py-1.5 text-ink-2 hover:bg-surface-2">Email templates</Link>
       </nav>

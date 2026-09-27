@@ -44,8 +44,8 @@ export function NewReservationForm(props: { properties: { id: string; name: stri
   }
 
   return (
-    <form action={onSubmit} className="space-y-4 rounded-xl border border-slate-200 bg-white p-6">
-      <h2 className="font-medium text-slate-900">New reservation</h2>
+    <form action={onSubmit} className="space-y-4 rounded-xl border border-hairline bg-white p-6">
+      <h2 className="font-medium text-ink">New reservation</h2>
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="sm:col-span-3">
           <label className="mb-1.5 block text-[13px] font-medium text-ink">Property</label>

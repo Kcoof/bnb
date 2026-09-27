@@ -31,7 +31,7 @@ export function OrgSettingsForm(props: {
   }
 
   return (
-    <form action={onSubmit} className="space-y-4 rounded-xl border border-slate-200 bg-white p-6">
+    <form action={onSubmit} className="space-y-4 rounded-xl border border-hairline bg-white p-6">
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className="mb-1.5 block text-[13px] font-medium text-ink">Organization name</label>

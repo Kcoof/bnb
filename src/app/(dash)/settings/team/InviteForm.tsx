@@ -28,8 +28,8 @@ export function InviteForm() {
   }
 
   return (
-    <form action={onSubmit} className="space-y-4 rounded-xl border border-slate-200 bg-white p-6">
-      <h2 className="font-medium text-slate-900">Invite staff</h2>
+    <form action={onSubmit} className="space-y-4 rounded-xl border border-hairline bg-white p-6">
+      <h2 className="font-medium text-ink">Invite staff</h2>
       <p className="text-caption-1 text-ink-2">
         They receive a Supabase invite email and land in this organization on first login.
       </p>

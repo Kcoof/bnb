@@ -42,9 +42,12 @@ export default async function TasksPage() {
       </span>
     );
     const label = new Date(dueAt).toISOString().slice(0, 16).replace("T", " ");
-    const overdue = new Date(dueAt).getTime() < now;
+    const ts = new Date(dueAt).getTime();
+    const overdue = ts < now;
+    const todayStr = new Date(now).toISOString().slice(0, 10);
+    const dueToday = new Date(dueAt).toISOString().slice(0, 10) === todayStr;
     return (
-      <span className={`rounded-full px-2.5 py-0.5 text-[12px] font-medium tabular-nums ${overdue ? "bg-danger-tint text-danger" : "bg-warning-tint text-warning"}`}>
+      <span className={`rounded-full px-2.5 py-0.5 text-[12px] font-medium tabular-nums ${overdue ? "bg-danger-tint text-danger" : dueToday ? "bg-warning-tint text-warning" : "bg-surface-2 text-ink-2"}`}>
         {overdue ? "Overdue" : "Due"} {label}
       </span>
     );

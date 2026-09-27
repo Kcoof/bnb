@@ -20,7 +20,7 @@ export default async function TeamPage() {
       <h1 className="text-title-1">Team</h1>
       <nav className="flex gap-2 text-sm">
         <Link href="/settings" className="rounded-lg border border-hairline bg-white px-3 py-1.5 text-ink-2 hover:bg-surface-2">Organization</Link>
-        <span className="rounded-lg bg-slate-900 px-3 py-1.5 font-medium text-white">Team</span>
+        <span className="segmented-item segmented-item-active">Team</span>
         <Link href="/settings/templates" className="rounded-lg border border-hairline bg-white px-3 py-1.5 text-ink-2 hover:bg-surface-2">Email templates</Link>
       </nav>
 
@@ -30,7 +30,7 @@ export default async function TeamPage() {
             <div>
               <div className="font-semibold text-ink">
                 {p.fullName || p.email}{" "}
-                <span className="ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-ink-2">
+                <span className="ml-1 rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-ink-2">
                   {p.role}
                 </span>
               </div>

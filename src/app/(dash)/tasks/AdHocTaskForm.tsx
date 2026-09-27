@@ -27,10 +27,10 @@ export function AdHocTaskForm(props: {
   }
 
   return (
-    <form action={onSubmit} className="flex flex-wrap items-end gap-2 rounded-xl border border-slate-200 bg-white p-4">
+    <form action={onSubmit} className="flex flex-wrap items-end gap-2 rounded-xl border border-hairline bg-white p-4">
       <div>
         <label className="mb-1 block text-[13px] font-medium text-ink">Property</label>
-        <select name="propertyId" required className="input h-9 w-auto px-2.5 text-[14px]">
+        <select name="propertyId" required className="input h-9 w-auto px-2.5 text-[16px]">
           {props.properties.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
@@ -40,7 +40,7 @@ export function AdHocTaskForm(props: {
       </div>
       <div>
         <label className="mb-1 block text-[13px] font-medium text-ink">Cleaner</label>
-        <select name="cleanerId" className="input h-9 w-auto px-2.5 text-[14px]">
+        <select name="cleanerId" className="input h-9 w-auto px-2.5 text-[16px]">
           <option value="">unassigned</option>
           {props.cleaners.map((c) => (
             <option key={c.id} value={c.id}>
@@ -51,11 +51,11 @@ export function AdHocTaskForm(props: {
       </div>
       <div>
         <label className="mb-1 block text-[13px] font-medium text-ink">Due date</label>
-        <input name="dueDate" type="date" className="input h-9 w-auto px-2.5 text-[14px]" />
+        <input name="dueDate" type="date" className="input h-9 w-auto px-2.5 text-[16px]" />
       </div>
       <div className="min-w-40 flex-1">
         <label className="mb-1 block text-[13px] font-medium text-ink">Notes (deep clean etc.)</label>
-        <input name="notes" className="mt-1 w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm" />
+        <input name="notes" className="input w-full" />
       </div>
       <button type="submit" disabled={pending} className="btn btn-primary btn-sm">
         {pending ? "…" : "Create task"}

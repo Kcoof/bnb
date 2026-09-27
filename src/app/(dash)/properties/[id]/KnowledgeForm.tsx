@@ -61,7 +61,7 @@ export function KnowledgeForm(props: {
                 name={f.name}
                 defaultValue={props.kb[f.name] ?? ""}
                 rows={3}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="input"
               />
             </div>
           ) : (
@@ -70,7 +70,7 @@ export function KnowledgeForm(props: {
               <input
                 name={f.name}
                 defaultValue={props.kb[f.name] ?? ""}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="input"
               />
             </div>
           ),
@@ -83,7 +83,7 @@ export function KnowledgeForm(props: {
           <button
             type="button"
             onClick={() => setExtras([...extras, { topic: "", content: "" }])}
-            className="rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-medium text-ink hover:bg-surface-2"
+            className="btn btn-secondary btn-sm"
           >
             + Add topic
           </button>
@@ -98,7 +98,7 @@ export function KnowledgeForm(props: {
                 next[i] = { ...next[i], topic: ev.target.value };
                 setExtras(next);
               }}
-              className="w-1/3 rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              className="w-1/3 input"
             />
             <input
               placeholder="Content the AI may use"
@@ -108,12 +108,12 @@ export function KnowledgeForm(props: {
                 next[i] = { ...next[i], content: ev.target.value };
                 setExtras(next);
               }}
-              className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              className="flex-1 input"
             />
             <button
               type="button"
               onClick={() => setExtras(extras.filter((_, j) => j !== i))}
-              className="rounded-lg border border-slate-300 px-2.5 py-1 text-xs text-ink-2 hover:bg-surface-2"
+              className="btn btn-secondary btn-sm"
             >
               Remove
             </button>
@@ -122,8 +122,8 @@ export function KnowledgeForm(props: {
       </div>
 
       {error && <p className="text-sm text-danger">{error}</p>}
-      {saved && <p className="text-sm text-emerald-700">Saved ✓</p>}
-      <button type="submit" disabled={pending} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50">
+      {saved && <p className="text-footnote text-success">Saved ✓</p>}
+      <button type="submit" disabled={pending} className="btn btn-primary btn-md">
         {pending ? "Saving…" : "Save knowledge base"}
       </button>
     </form>

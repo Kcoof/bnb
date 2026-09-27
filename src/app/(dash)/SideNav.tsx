@@ -53,8 +53,3 @@ export function NavBrand() {
   );
 }
 
-export function useActiveNav() {
-  const pathname = usePathname();
-  return (href: string) =>
-    pathname === href || pathname.startsWith(href + "/");
-}

@@ -45,12 +45,12 @@ export function IcsPanel(props: {
   }
 
   return (
-    <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-6">
+    <div className="space-y-4 rounded-xl border border-hairline bg-white p-6">
       <div>
         <label className="mb-1.5 block text-[13px] font-medium text-ink">
           iCal / ICS URL (Airbnb, Booking.com, VRBO export)
         </label>
-        <div className="mt-1 flex gap-2">
+        <div className="mt-1 flex items-center gap-2">
           <input
             value={url}
             onChange={(e) => setUrl(e.target.value)}
@@ -71,7 +71,7 @@ export function IcsPanel(props: {
         <button
           onClick={onSync}
           disabled={pending !== null || !url}
-          className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+          className="btn btn-secondary btn-sm"
         >
           {pending === "sync" ? "Syncing…" : "Sync now"}
         </button>
@@ -83,7 +83,7 @@ export function IcsPanel(props: {
       </div>
 
       {props.property.lastError && (
-        <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <p className="rounded-lg bg-warning-tint px-3 py-2.5 text-callout text-warning">
           Last sync error: {props.property.lastError}
         </p>
       )}
