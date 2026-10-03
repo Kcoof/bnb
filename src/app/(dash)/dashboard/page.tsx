@@ -1,21 +1,18 @@
 import Link from "next/link";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, gte, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   conversations,
   escalations,
-  messages,
   properties,
   reservations,
-  tasks,
 } from "@/lib/db/schema";
 import { requireOrgMember } from "@/lib/auth";
 import { localDateStr } from "@/lib/time";
-import { StatusPill } from "@/components/StatusPill";
-import { CopyButton } from "@/components/CopyButton";
 import { Icon } from "@/components/Icon";
-import { chatUrl, renderSnippet } from "@/lib/mail";
+import { fmtLocal } from "@/lib/time";
 
+// AUTOMI v2 Today (spec §3): answers "do I need to do anything?" first.
 export default async function DashboardPage() {
   const member = await requireOrgMember();
   if (!member) return null;
@@ -27,6 +24,22 @@ export default async function DashboardPage() {
     .where(eq(properties.orgId, orgId));
   const timezones = [...new Set(orgProps.map((p) => p.timezone))];
   const today = localDateStr(timezones[0] ?? "UTC");
+
+  const openEscalations = await db
+    .select()
+    .from(escalations)
+    .where(and(eq(escalations.orgId, orgId), eq(escalations.status, "open")))
+    .orderBy(sql`created_at desc`)
+    .limit(5);
+
+  const monthStart = new Date();
+  monthStart.setUTCDate(1);
+  const [convCount] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(conversations)
+    .where(
+      and(eq(conversations.orgId, orgId), gte(conversations.createdAt, monthStart)),
+    );
 
   const arrivals = await db
     .select({ r: reservations, p: properties })
@@ -53,220 +66,104 @@ export default async function DashboardPage() {
       ),
     );
 
-  const openEscalations = await db
-    .select()
-    .from(escalations)
-    .where(and(eq(escalations.orgId, orgId), eq(escalations.status, "open")))
-    .orderBy(sql`created_at desc`)
-    .limit(3);
-  const escalationCount = (
-    await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(escalations)
-      .where(and(eq(escalations.orgId, orgId), eq(escalations.status, "open")))
-  )[0]?.count;
+  const firstName = member.profile.fullName.split(" ")[0] || "there";
+  const hour = parseInt(fmtLocal(new Date(), timezones[0] ?? "UTC").slice(11, 13), 10);
+  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 
-  const statusCounts = orgProps.reduce<Record<string, number>>((acc, p) => {
-    acc[p.status] = (acc[p.status] ?? 0) + 1;
-    return acc;
-  }, {});
-
-  // AI handled % — conversations with guest activity where the AI resolved
-  // everything without an escalation
-  const aiStats = await db
-    .select({ conversationId: conversations.id })
-    .from(conversations)
-    .innerJoin(
-      messages,
-      sql`${messages.conversationId} = ${conversations.id} and ${messages.role} = 'guest'`,
-    )
-    .where(eq(conversations.orgId, orgId))
-    .groupBy(conversations.id);
-  const totalConversations = aiStats.length;
-  const escalatedConversations = new Set(
-    (
-      await db
-        .select({ conversationId: escalations.conversationId })
-        .from(escalations)
-        .where(eq(escalations.orgId, orgId))
-    )
-      .map((e) => e.conversationId)
-      .filter((id): id is string => Boolean(id)),
-  ).size;
-  const aiHandledPct =
-    totalConversations > 0
-      ? Math.round(((totalConversations - escalatedConversations) / totalConversations) * 100)
-      : null;
-
-  const tasksToday = await db
-    .select({ t: tasks, p: properties })
-    .from(tasks)
-    .innerJoin(properties, eq(tasks.propertyId, properties.id))
-    .where(
-      and(
-        eq(tasks.orgId, orgId),
-        sql`${tasks.status} in ('pending','in_progress')`,
-      ),
-    );
-
-  const missingEmail = arrivals.filter((a) => !a.r.guestEmail);
-  const convIds = arrivals.length
-    ? await db
-        .select({ id: conversations.id, reservationId: conversations.reservationId })
-        .from(conversations)
-        .where(eq(conversations.orgId, orgId))
-    : [];
-
-  const hostName = member.profile.fullName || "Your host";
-  const snippets = new Map<string, string>();
-  for (const a of arrivals) {
-    snippets.set(a.r.id, await renderSnippet(a.r.id, hostName));
-  }
+  const allGood = openEscalations.length === 0;
 
   return (
     <div className="space-y-8">
       <div className="animate-fade-up">
-        <h1 className="text-title-1">Today</h1>
-        <p className="mt-0.5 text-footnote text-ink-2">{today}</p>
+        <h1 className="text-title-1">
+          {greeting}, {firstName}.
+        </h1>
+        <p className="mt-0.5 text-callout text-ink-2">
+          {allGood ? "Everything looks good." : `${openEscalations.length} thing${openEscalations.length > 1 ? "s" : ""} need${openEscalations.length > 1 ? "" : "s"} you.`}
+        </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        {["ready", "occupied", "needs_cleaning", "cleaning", "blocked"].map((s) => (
-          <div key={s} className="card p-5">
-            <div className="text-[32px] font-semibold tracking-[-0.02em] tabular-nums text-ink">
-              {statusCounts[s] ?? 0}
+      {/* Needs your attention */}
+      {!allGood && (
+        <div className="space-y-3">
+          {openEscalations.map((e) => (
+            <div
+              key={e.id}
+              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-hairline bg-danger-tint p-5"
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/70 text-danger">
+                  <Icon name="alert" size={18} />
+                </span>
+                <div className="min-w-0">
+                  <div className="text-callout font-medium text-ink">
+                    {e.reason.replace(/_/g, " ")}
+                    {e.urgency === "high" ? " · urgent" : ""}
+                  </div>
+                  <div className="truncate text-footnote text-ink-2">{e.summary}</div>
+                </div>
+              </div>
+              {e.conversationId && (
+                <Link href={`/inbox/${e.conversationId}`} className="btn btn-primary btn-sm">
+                  Reply
+                </Link>
+              )}
             </div>
-            <div className="mt-1.5">
-              <StatusPill status={s} />
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {aiHandledPct !== null && (
-        <div className="flex animate-fade-up items-center gap-6 rounded-xl bg-accent-tint p-6">
-          <div className="text-[44px] font-semibold tracking-[-0.02em] text-accent tabular-nums">
-            {aiHandledPct}%
-          </div>
-          <div className="max-w-xs text-callout text-ink-2">
-            of guest conversations handled by the AI without you —{" "}
-            {totalConversations - escalatedConversations} of {totalConversations}{" "}
-            conversations
-          </div>
+          ))}
         </div>
       )}
 
-      {escalationCount ? (
-        <Link
-          href="/inbox?tab=escalated"
-          className="block rounded-lg border border-hairline bg-danger-tint p-5 transition duration-200 hover:bg-[#fbdede]"
-        >
-          <div className="flex items-center gap-2 text-callout font-semibold text-danger">
-            <Icon name="alert" size={16} />
-            Open escalations ({escalationCount})
-          </div>
-          {openEscalations.map((e) => (
-            <div key={e.id} className="mt-1 text-callout text-ink">
-              {e.reason.replace(/_/g, " ")} — {e.summary}
-            </div>
-          ))}
-        </Link>
-      ) : null}
-
+      {/* Property cards */}
       <section>
-        <h2 className="mb-2 text-title-3">Arrivals ({arrivals.length})</h2>
-        <div className="list-card">
-          {arrivals.length === 0 && (
-            <p className="py-8 text-center text-callout text-ink-2">No arrivals today.</p>
-          )}
-          {arrivals.map(({ r, p }) => (
-            <div key={r.id} className="flex flex-wrap items-center justify-between gap-2 px-5 py-4">
-              <div className="min-w-0">
-                <Link href={`/reservations/${r.id}`} className="text-callout font-medium text-ink hover:text-accent">
-                  {r.guestName ?? "(guest name missing)"} → {p.name}
-                </Link>
-                <div className="mt-0.5 flex items-center gap-1 text-footnote text-ink-2">
-                  {r.guestEmail ? (
-                    r.guestEmail
-                  ) : (
-                    <>
-                      <Icon name="alert" size={12} className="text-warning" />
-                      <span className="text-warning">no guest email — send the snippet</span>
-                    </>
-                  )}
+        <h2 className="mb-3 text-title-3">Your properties</h2>
+        {orgProps.length === 0 ? (
+          <div className="flex flex-col items-center rounded-lg border border-hairline bg-surface px-6 py-12 text-center">
+            <p className="text-callout text-ink-2">No properties yet.</p>
+            <Link href="/onboarding" className="btn btn-primary btn-md mt-5">
+              Set up your first concierge
+            </Link>
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {orgProps.map((p) => (
+              <Link
+                key={p.id}
+                href={`/properties/${p.id}`}
+                className="card flex items-center justify-between p-5 transition duration-300 ease-out hover:-translate-y-1 hover:shadow-raised"
+              >
+                <div>
+                  <div className="text-callout font-medium text-ink">{p.name}</div>
+                  <div className="mt-0.5 flex items-center gap-1.5 text-footnote text-success">
+                    <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />
+                    Concierge active
+                  </div>
                 </div>
-              </div>
-              <div className="flex gap-2">
-                {r.chatToken && (
-                  <>
-                    <CopyButton text={chatUrl(r.chatToken)} label="Chat link" />
-                    <CopyButton text={snippets.get(r.id) ?? ""} label="Snippet" />
-                  </>
-                )}
-                {(() => {
-                  const conv = convIds.find((c) => c.reservationId === r.id);
-                  return conv ? (
-                    <Link href={`/inbox/${conv.id}`} className="btn btn-secondary h-8 px-3 text-[13px]">
-                      Conversation
-                    </Link>
-                  ) : null;
-                })()}
-              </div>
-            </div>
-          ))}
-        </div>
-        {missingEmail.length > 0 && (
-          <p className="mt-2 flex items-center gap-1.5 text-footnote text-warning">
-            <Icon name="alertCircle" size={12} />
-            {missingEmail.length} arrival(s) missing guest email — paste the snippet
-            into the booking channel thread so the guest gets the chat link.
-          </p>
+                <Icon name="chevronRight" size={16} className="text-ink-3" />
+              </Link>
+            ))}
+          </div>
         )}
       </section>
 
-      <section>
-        <h2 className="mb-2 text-title-3">Departures ({departures.length})</h2>
-        <div className="list-card">
-          {departures.length === 0 && (
-            <p className="py-8 text-center text-callout text-ink-2">No departures today.</p>
-          )}
-          {departures.map(({ r, p }) => (
-            <div key={r.id} className="flex flex-wrap items-center justify-between gap-2 px-5 py-4">
-              <div>
-                <Link href={`/reservations/${r.id}`} className="text-callout font-medium text-ink hover:text-accent">
-                  {r.guestName ?? "(guest name missing)"} ← {p.name}
-                </Link>
-                <div className="mt-0.5 flex items-center gap-2 text-footnote text-ink-2">
-                  checkout {p.checkoutTime} <StatusPill status={p.status} />
-                </div>
-              </div>
-              <Link href="/tasks" className="btn btn-secondary h-8 px-3 text-[13px]">
-                Cleaning
-              </Link>
-            </div>
-          ))}
+      {/* Today's stats */}
+      <section className="grid grid-cols-3 gap-4">
+        <div className="card p-5">
+          <div className="text-[32px] font-semibold tabular-nums tracking-[-0.02em] text-ink">
+            {arrivals.length}
+          </div>
+          <div className="mt-1 text-footnote text-ink-2">arrivals today</div>
         </div>
-      </section>
-
-      <section>
-        <h2 className="mb-2 text-title-3">Open cleaning tasks ({tasksToday.length})</h2>
-        <div className="list-card">
-          {tasksToday.length === 0 && (
-            <p className="py-8 text-center text-callout text-ink-2">No open tasks.</p>
-          )}
-          {tasksToday.map(({ t, p }) => (
-            <div key={t.id} className="flex items-center justify-between px-5 py-4">
-              <span className="flex items-center gap-2.5 text-callout text-ink">
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-2 text-ink-2">
-                  <Icon name="house" size={18} />
-                </span>
-                {p.name} <StatusPill status={t.status} />
-              </span>
-              <Link href="/tasks" className="text-footnote text-accent hover:underline">
-                open tasks
-              </Link>
-            </div>
-          ))}
+        <div className="card p-5">
+          <div className="text-[32px] font-semibold tabular-nums tracking-[-0.02em] text-ink">
+            {departures.length}
+          </div>
+          <div className="mt-1 text-footnote text-ink-2">departures today</div>
+        </div>
+        <div className="card p-5">
+          <div className="text-[32px] font-semibold tabular-nums tracking-[-0.02em] text-ink">
+            {convCount?.n ?? 0}
+          </div>
+          <div className="mt-1 text-footnote text-ink-2">conversations this month</div>
         </div>
       </section>
     </div>

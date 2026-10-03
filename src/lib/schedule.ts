@@ -34,7 +34,8 @@ export async function ensureConversation(reservationId: string): Promise<void> {
   if (existing) return;
 
   const first = (r.reservation.guestName ?? "").split(" ")[0];
-  const greeting = `Hi ${first || "there"}! I'm ${r.property.assistantName}, the assistant for ${r.property.name}. Ask me anything about your stay — wifi, parking, checkout, the neighborhood. I'm here 24/7.`;
+  // human tone (spec §4): a person, not a widget
+  const greeting = `Hi, how's it going? I'm ${r.property.assistantName}, I'll be looking after you during your stay${first ? `, ${first}` : ""}. What can I help with?`;
 
   await db.transaction(async (tx) => {
     const conv = await tx

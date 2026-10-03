@@ -2,76 +2,107 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { db } from "@/lib/db";
 import { organizations, profiles } from "@/lib/db/schema";
 import { logEvent } from "@/lib/audit";
 
-// Signup creates org + profile via the admin client in one action —
-// avoids the RLS chicken-and-egg (plan §3.1 "simpler alternative").
+// AUTOMI auth (spec §1): Google OAuth primary, email OTP fallback.
+// No passwords anywhere in the new-user flow. First login auto-creates the
+// org + owner profile (there is no signup form with an org name anymore).
 
-export async function signUpAction(input: {
-  email: string;
-  password: string;
-  fullName: string;
-  orgName: string;
-}): Promise<{ error?: string }> {
-  const email = input.email.trim().toLowerCase();
-  const admin = createAdminClient();
+async function ensureOrgForUser(userId: string, email: string, fullName?: string) {
+  const existing = (
+    await db.select().from(profiles).where(eq_(profiles.id, userId)).limit(1)
+  )[0];
+  if (existing) return existing;
 
-  const { data: authData, error: authError } = await admin.auth.admin.createUser({
-    email,
-    password: input.password,
-    email_confirm: true,
+  const displayName = fullName?.trim() || email.split("@")[0];
+  const org = (
+    await db
+      .insert(organizations)
+      .values({ name: `${displayName}'s stays` })
+      .returning()
+  )[0];
+  const profile = (
+    await db
+      .insert(profiles)
+      .values({
+        id: userId,
+        orgId: org.id,
+        fullName: displayName,
+        email,
+        role: "owner",
+      })
+      .returning()
+  )[0];
+
+  await logEvent({
+    orgId: org.id,
+    actorType: "host",
+    actorId: userId,
+    entity: "org",
+    entityId: org.id,
+    action: "org.created",
+    metadata: { via: "oauth_or_otp" },
   });
-  if (authError) return { error: authError.message };
-  const userId = authData.user.id;
-
-  try {
-    const org = (
-      await db.insert(organizations).values({ name: input.orgName.trim() }).returning()
-    )[0];
-
-    await db.insert(profiles).values({
-      id: userId,
-      orgId: org.id,
-      fullName: input.fullName.trim(),
-      email,
-      role: "owner",
-    });
-
-    await logEvent({
-      orgId: org.id,
-      actorType: "host",
-      actorId: userId,
-      entity: "org",
-      entityId: org.id,
-      action: "org.created",
-    });
-  } catch (err) {
-    // partial-failure cleanup (review minor): don't orphan an auth user with
-    // no profile — delete it so the signup can be retried cleanly
-    await admin.auth.admin.deleteUser(userId);
-    const cause =
-      err instanceof Error && err.cause instanceof Error
-        ? ` (${err.cause.message})`
-        : "";
-    return {
-      error: `Signup failed: ${err instanceof Error ? err.message : "unknown error"}${cause}`,
-    };
-  }
-
-  // sign in immediately
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password: input.password,
-  });
-  if (error) return { error: error.message };
-  redirect("/dashboard");
+  return profile;
 }
 
-export async function signInAction(input: {
+// tiny local eq import shim to keep the import list tidy
+import { eq as eq_ } from "drizzle-orm";
+
+/** Google OAuth — called from the login page button. */
+export async function googleSignInAction(): Promise<void> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${process.env.APP_URL ?? "http://localhost:3000"}/auth/callback`,
+    },
+  });
+  if (error) redirect("/login?error=" + encodeURIComponent(error.message));
+  if (data.url) redirect(data.url);
+}
+
+/** Step 1 of OTP: send the 6-digit code to the email. */
+export async function sendOtpAction(input: {
+  email: string;
+}): Promise<{ error?: string; sent?: boolean }> {
+  const email = input.email.trim().toLowerCase();
+  if (!email.includes("@")) return { error: "Enter a valid email address." };
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: { shouldCreateUser: true },
+  });
+  if (error) return { error: error.message };
+  return { sent: true };
+}
+
+/** Step 2 of OTP: verify the code — verifies + signs in in one step. */
+export async function verifyOtpAction(input: {
+  email: string;
+  token: string;
+}): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase.auth.verifyOtp({
+    email: input.email.trim().toLowerCase(),
+    token: input.token.trim(),
+    type: "email",
+  });
+  if (error) return { error: error.message };
+  redirect("/auth/callback");
+}
+
+export async function signOutAction() {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  redirect("/login");
+}
+
+// Legacy password sign-in kept ONLY for the pre-launch owner account; not
+// reachable from the default UI flow (spec §1: no passwords for new users).
+export async function signInPasswordAction(input: {
   email: string;
   password: string;
 }): Promise<{ error?: string }> {
@@ -81,11 +112,7 @@ export async function signInAction(input: {
     password: input.password,
   });
   if (error) return { error: error.message };
-  redirect("/dashboard");
+  redirect("/auth/callback");
 }
 
-export async function signOutAction() {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
-  redirect("/login");
-}
+export { ensureOrgForUser };

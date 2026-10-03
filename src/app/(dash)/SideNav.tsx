@@ -4,12 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon } from "@/components/Icon";
 
+// AUTOMI v2 nav (spec §3): three destinations only. Inbox/board/tasks/
+// reservations remain as deep-linkable routes but are not surfaced.
 const NAV = [
   { href: "/dashboard", label: "Today", icon: "today" },
-  { href: "/inbox", label: "Inbox", icon: "inbox" },
-  { href: "/board", label: "Status board", icon: "board" },
-  { href: "/tasks", label: "Cleaning tasks", icon: "tasks" },
-  { href: "/reservations", label: "Reservations", icon: "ticket" },
   { href: "/properties", label: "Properties", icon: "house" },
   { href: "/settings", label: "Settings", icon: "gear" },
 ];

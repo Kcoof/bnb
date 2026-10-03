@@ -13,6 +13,7 @@ import {
   tasks,
 } from "@/lib/db/schema";
 import { chatUrl, escapeHtml, renderEmail, sendEmail, taskUrl, templateVars, appUrl } from "@/lib/mail";
+import { sendSms } from "@/lib/sms";
 import { ensureConversation, ensureScheduledMessages } from "@/lib/schedule";
 import { logEvent } from "@/lib/audit";
 
@@ -86,6 +87,23 @@ export const escalationCreated = inngest.createFunction(
       entityId: escalationId,
       action: "escalation.email_sent",
     });
+
+    // SMS is the PRIMARY host alert (spec §6)
+    if (r.org.hostPhone) {
+      const propertyRow = r.e.conversationId
+        ? (
+            await db
+              .select({ name: properties.name })
+              .from(conversations)
+              .innerJoin(reservations, eq(conversations.reservationId, reservations.id))
+              .innerJoin(properties, eq(reservations.propertyId, properties.id))
+              .where(eq(conversations.id, r.e.conversationId))
+              .limit(1)
+          )[0]
+        : undefined;
+      const smsBody = `${propertyRow?.name ?? r.org.name}: guest reports ${r.e.summary}${r.e.urgency === "high" ? " (URGENT)" : ""}. Open AUTOMI to respond: ${r.e.conversationId ? `${appUrl()}/inbox/${r.e.conversationId}` : appUrl()}`;
+      await sendSms({ orgId: r.org.id, toPhone: r.org.hostPhone, body: smsBody });
+    }
     return { sent: true };
   },
 );

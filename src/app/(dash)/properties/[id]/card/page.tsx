@@ -4,7 +4,7 @@ import QRCode from "qrcode";
 import { db } from "@/lib/db";
 import { properties } from "@/lib/db/schema";
 import { requireOrgMember } from "@/lib/auth";
-import { chatUrl } from "@/lib/mail";
+import { conciergeQrUrl } from "@/lib/mail";
 import { PrintButton } from "./PrintButton";
 
 export default async function PropertyCardPage({
@@ -27,7 +27,7 @@ export default async function PropertyCardPage({
     return <p className="text-sm text-ink-2">Property not found or no concierge QR.</p>;
   }
 
-  const url = chatUrl(prop.conciergeToken);
+  const url = conciergeQrUrl(prop.conciergeToken);
   const qr = await QRCode.toDataURL(url, { width: 600, margin: 1 });
 
   return (

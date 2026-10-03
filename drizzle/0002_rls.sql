@@ -163,3 +163,31 @@ create policy kb_admin_delete on public.property_knowledge
         and public.current_user_role() in ('owner','admin')
     )
   );
+
+-- AUTOMI v2 tables
+alter table public.appliance_templates   enable row level security;
+alter table public.property_appliances   enable row level security;
+alter table public.custom_faqs           enable row level security;
+alter table public.notifications         enable row level security;
+alter table public.subscriptions         enable row level security;
+
+-- shared preset content: readable by any authenticated user, never written via API
+drop policy if exists templates_select on public.appliance_templates;
+create policy templates_select on public.appliance_templates
+  for select using (auth.uid() is not null);
+
+do $$
+declare t text;
+begin
+  foreach t in array array['property_appliances','custom_faqs','notifications','subscriptions'] loop
+    execute format('drop policy if exists %I_v2_select on public.%I', t, t);
+    execute format(
+      'create policy %I_v2_select on public.%I for select using (org_id = public.current_org_id())', t, t);
+    execute format('drop policy if exists %I_v2_insert on public.%I', t, t);
+    execute format(
+      'create policy %I_v2_insert on public.%I for insert with check (org_id = public.current_org_id())', t, t);
+    execute format('drop policy if exists %I_v2_update on public.%I', t, t);
+    execute format(
+      'create policy %I_v2_update on public.%I for update using (org_id = public.current_org_id()) with check (org_id = public.current_org_id())', t, t);
+  end loop;
+end $$;

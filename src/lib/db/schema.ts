@@ -5,6 +5,7 @@ import {
   text,
   boolean,
   integer,
+  doublePrecision,
   timestamp,
   date,
   jsonb,
@@ -93,6 +94,7 @@ export const organizations = pgTable("organizations", {
   timezone: text("timezone").notNull().default("UTC"),
   digestHour: integer("digest_hour").notNull().default(7),
   senderName: text("sender_name").notNull().default("Stay Assistant"),
+  hostPhone: text("host_phone"), // escalation SMS target (spec §2 step 9)
   createdAt,
 });
 
@@ -132,7 +134,11 @@ export const properties = pgTable(
     checkinTime: text("checkin_time").notNull().default("16:00"),
     checkoutTime: text("checkout_time").notNull().default("10:00"),
     assistantName: text("assistant_name").notNull().default("Alex"),
-    conciergeToken: text("concierge_token").unique(), // property-level QR chat (no reservation)
+    conciergeToken: text("concierge_token").unique(), // printed QR → resolves to the ACTIVE stay's chat token
+    mapsUrl: text("maps_url"),
+    latitude: doublePrecision("latitude"),
+    longitude: doublePrecision("longitude"),
+    amenities: jsonb("amenities").notNull().default(sql`'[]'::jsonb`), // ["Kitchen","Parking",…]
     active: boolean("active").notNull().default(true),
     createdAt,
   },
@@ -360,4 +366,97 @@ export const events = pgTable(
     index("events_org_created_idx").on(t.orgId, t.createdAt),
     index("events_entity_idx").on(t.entity, t.entityId),
   ],
+);
+
+// ---- AUTOMI v2 tables (build spec §8) ----
+
+// Preset appliance/amenity how-tos; selected ones are COPIED onto the
+// property (copy-on-select) so later host edits are never overwritten.
+export const applianceTemplates = pgTable("appliance_templates", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  type: text("type").notNull().unique(), // smart_tv | chromecast | apple_tv | projector | other
+  label: text("label").notNull(),
+  defaultInstructions: text("default_instructions").notNull(),
+  defaultTroubleshooting: text("default_troubleshooting").notNull().default(""),
+  sortOrder: integer("sort_order").notNull().default(0),
+});
+
+// A property's own copies of instructions + troubleshooting scripts (spec §6).
+export const propertyAppliances = pgTable(
+  "property_appliances",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organizations.id),
+    propertyId: uuid("property_id")
+      .notNull()
+      .references(() => properties.id, { onDelete: "cascade" }),
+    templateType: text("template_type").notNull(),
+    label: text("label").notNull(),
+    instructions: text("instructions").notNull().default(""),
+    troubleshooting: text("troubleshooting").notNull().default(""),
+    createdAt,
+    updatedAt,
+  },
+  (t) => [uniqueIndex("property_appliances_property_type_idx").on(t.propertyId, t.templateType)],
+);
+
+// Host-authored Q&A the AI may quote (spec §8 CustomFAQ).
+export const customFaqs = pgTable(
+  "custom_faqs",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organizations.id),
+    propertyId: uuid("property_id")
+      .notNull()
+      .references(() => properties.id, { onDelete: "cascade" }),
+    question: text("question").notNull(),
+    answer: text("answer").notNull(),
+    createdAt,
+    updatedAt,
+  },
+  (t) => [index("custom_faqs_property_idx").on(t.propertyId)],
+);
+
+// Transactional SMS log (spec §8 Notifications) — every escalation text.
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organizations.id),
+    toPhone: text("to_phone").notNull(),
+    body: text("body").notNull(),
+    channel: text("channel").notNull().default("sms"), // sms | email
+    provider: text("provider").notNull().default("twilio"),
+    status: text("status").notNull().default("sent"), // sent | failed | skipped
+    providerRef: text("provider_ref"),
+    error: text("error"),
+    createdAt,
+  },
+  (t) => [index("notifications_org_idx").on(t.orgId, t.createdAt)],
+);
+
+// Stripe subscription mirror — Stripe is the source of truth (spec §13).
+export const subscriptions = pgTable(
+  "subscriptions",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organizations.id),
+    stripeCustomerId: text("stripe_customer_id"),
+    stripeSubscriptionId: text("stripe_subscription_id").unique(),
+    plan: text("plan").notNull().default("starter"), // starter | professional | business
+    status: text("status").notNull().default("trialing"), // active | past_due | canceled | trialing
+    currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+    propertyLimit: integer("property_limit").notNull().default(1),
+    createdAt,
+    updatedAt,
+  },
+  (t) => [uniqueIndex("subscriptions_org_idx").on(t.orgId)],
 );

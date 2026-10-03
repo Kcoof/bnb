@@ -26,6 +26,11 @@ export function taskUrl(token: string): string {
   return `${appUrl()}/c/${token}`;
 }
 
+/** Printed QR URL — resolves to the ACTIVE stay's (expiring) chat token. */
+export function conciergeQrUrl(token: string): string {
+  return `${appUrl()}/q/${token}`;
+}
+
 /** HTML-escape a value before interpolation into an email (review M7). */
 export function escapeHtml(value: string): string {
   return value

@@ -11,8 +11,10 @@ import {
 } from "@/lib/db/schema";
 import { validateGuestToken } from "@/lib/tokens";
 import { buildSystemPrompt, prefilterHit } from "@/lib/ai/prompt";
-import { aiClient, aiModel, escalateTool } from "@/lib/ai/client";
+import { aiClient, aiModel, escalateTool, nearbyTool } from "@/lib/ai/client";
 import { inngest } from "@/lib/inngest/client";
+import { searchNearby } from "@/lib/places";
+import { chatEnabledForOrg } from "@/lib/plans";
 
 export const maxDuration = 60;
 
@@ -35,6 +37,9 @@ export async function POST(
   const ctx = await validateGuestToken(token);
   if (!ctx) {
     return Response.json({ error: "link_not_active" }, { status: 404 });
+  }
+  if (!(await chatEnabledForOrg(ctx.reservation.orgId))) {
+    return Response.json({ error: "chat_paused" }, { status: 402 });
   }
   const { reservation } = ctx;
 
@@ -205,16 +210,15 @@ export async function POST(
       // per-request accumulation of streamed tool-call fragments
       const toolCalls = new Map<number, { id: string; name: string; args: string }>();
 
-      try {
+      const runCompletion = async (msgs: ChatCompletionMessageParam[]) => {
         const completion = await aiClient().chat.completions.create({
           model: aiModel(),
-          messages: apiMessages,
-          tools: [escalateTool],
+          messages: msgs,
+          tools: [escalateTool, nearbyTool],
           temperature: 0.2,
           max_tokens: 600,
           stream: true,
         });
-
         for await (const chunk of completion) {
           const delta = chunk.choices[0]?.delta;
           if (delta?.content) {
@@ -235,22 +239,76 @@ export async function POST(
             }
           }
         }
+      };
 
+      const parseEscalation = () => {
         const toolCall = [...toolCalls.values()].find((t) => t.name === "escalate_to_host");
-        if (toolCall) {
-          try {
-            const args = JSON.parse(toolCall.args || "{}");
-            escalation = {
-              reason: args.reason ?? "out_of_kb",
-              summary: args.summary ?? guestMessage.slice(0, 200),
-              urgency: args.urgency === "high" ? "high" : "normal",
-            };
-          } catch {
-            escalation = { reason: "out_of_kb", summary: guestMessage.slice(0, 200), urgency: "normal" };
-          }
+        if (!toolCall) return null;
+        try {
+          const args = JSON.parse(toolCall.args || "{}");
+          return {
+            reason: args.reason ?? "out_of_kb",
+            summary: args.summary ?? guestMessage.slice(0, 200),
+            urgency: args.urgency === "high" ? "high" : "normal",
+          };
+        } catch {
+          return { reason: "out_of_kb", summary: guestMessage.slice(0, 200), urgency: "normal" };
         }
+      };
+
+      try {
+        // pass 1 — may end with a tool call (nearby_search / escalate)
+        await runCompletion(apiMessages);
+
+        // nearby_search (spec §5): live Places lookup, then answer from results
+        const nearbyCall = [...toolCalls.values()].find((t) => t.name === "nearby_search");
+        if (nearbyCall) {
+          toolCalls.clear();
+          let query = "restaurant";
+          try {
+            query = (JSON.parse(nearbyCall.args || "{}").query as string) || "restaurant";
+          } catch {}
+          let toolContent: string;
+          if (meta.lat !== null && meta.lng !== null) {
+            const results = await searchNearby(meta.lat, meta.lng, query);
+            toolContent = results
+              ? results
+                  .map((p) => `${p.name}${p.rating ? ` (rated ${p.rating})` : ""}${p.type ? ` — ${p.type}` : ""}`)
+                  .join("\n")
+              : "NO_RESULTS";
+          } else {
+            toolContent = "NO_LOCATION";
+          }
+          if (toolContent === "NO_RESULTS" || toolContent === "NO_LOCATION") {
+            toolContent +=
+              " — tell the guest the host will send personal recommendations shortly, then call escalate_to_host (reason: out_of_kb). Do not invent places.";
+          }
+          const secondMessages: ChatCompletionMessageParam[] = [
+            ...apiMessages,
+            {
+              role: "assistant",
+              content: null,
+              tool_calls: [
+                {
+                  id: nearbyCall.id || "nearby",
+                  type: "function" as const,
+                  function: { name: "nearby_search", arguments: nearbyCall.args || "{}" },
+                },
+              ],
+            },
+            {
+              role: "tool",
+              tool_call_id: nearbyCall.id || "nearby",
+              content: toolContent,
+            },
+          ];
+          // pass 2 — answer from the live results (may itself escalate)
+          await runCompletion(secondMessages);
+        }
+
+        escalation = parseEscalation();
       } catch (err) {
-        // stream error mid-flight → system_note, no fake assistant message (§4.6)
+        // stream error mid-flight → system_note, no fake assistant message
         await db.insert(messages).values({
           orgId: reservation.orgId,
           conversationId,

@@ -13,16 +13,16 @@ const STEPS = [
 const FEATURES = [
   { icon: "bot", tint: "bg-accent-tint text-accent", title: "AI Concierge", text: "Every property gets its own assistant that answers repetitive questions instantly — and knows when to fetch you." },
   { icon: "sparkles", tint: "bg-accent-tint text-accent", title: "Guest Information", text: "WiFi, house rules, appliances, parking, recommendations, emergency info. The AI only answers from what you entered — it never invents." },
-  { icon: "alert", tint: "bg-danger-tint text-danger", title: "Smart Escalation", text: "Late checkout, refunds, broken AC — flagged to you with a one-line summary. Approve or decline in one tap." },
-  { icon: "tasks", tint: "bg-success-tint text-success", title: "Cleaning & Ops", text: "Checkout passed? The cleaner gets a link, marks the property cleaned, and it turns Ready — automatically." },
+  { icon: "alert", tint: "bg-danger-tint text-danger", title: "Smart Escalation", text: "Late checkout, refunds, broken AC — after trying the built-in fix, it texts your phone with a one-line summary. Approve or decline from anywhere." },
+  { icon: "qr", tint: "bg-success-tint text-success", title: "Print-and-Place QR", text: "A premium card for the nightstand or fridge. Guests scan and chat instantly — no app, no login, works forever." },
   { icon: "today", tint: "bg-warning-tint text-warning", title: "Calendar Sync", text: "Paste your Airbnb or Booking.com calendar link. Reservations sync every 2 hours — arrivals and departures on your dashboard." },
   { icon: "house", tint: "bg-surface-2 text-ink-2", title: "Multi-Property", text: "From one apartment to 100+. One dashboard, every property, every conversation." },
 ];
 
 const PLANS = [
-  { name: "Starter", price: "$29", per: "/month", props: "1–3 properties", features: ["AI guest chat", "QR cards", "Escalations", "Email automation"], featured: false },
-  { name: "Professional", price: "$79", per: "/month", props: "Up to 10 properties", features: ["Everything in Starter", "Calendar sync", "Cleaner workflows", "Team accounts"], featured: true },
-  { name: "Business", price: "$199", per: "/month", props: "Up to 30 properties", features: ["Everything in Professional", "Priority support", "Custom templates", "Onboarding help"], featured: false },
+  { name: "Starter", price: "$29", per: "/month", props: "1–3 properties", features: ["AI guest chat", "Printable QR cards", "SMS escalation alerts"], featured: false },
+  { name: "Professional", price: "$79", per: "/month", props: "Up to 10 properties", features: ["Everything in Starter", "Calendar sync", "Up to 10 properties"], featured: true },
+  { name: "Business", price: "$199", per: "/month", props: "Up to 30 properties", features: ["Everything in Professional", "Priority support", "Up to 30 properties"], featured: false },
 ];
 
 export default async function LandingPage() {
@@ -77,7 +77,7 @@ export default async function LandingPage() {
       <section className="mx-auto max-w-[1024px] scroll-mt-16 px-6 pb-16 pt-20 text-center md:pb-24 md:pt-28">
         <div className="animate-fade-up">
           <p className="text-[17px] font-semibold text-accent">
-            Airbnb manages your bookings. AUTOMI manages your guests.
+            Airbnb manages the booking. AUTOMI manages the stay.
           </p>
           <h1 className="mx-auto mt-4 max-w-3xl text-display">
             Your property&apos;s AI concierge.

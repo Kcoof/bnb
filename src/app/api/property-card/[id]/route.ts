@@ -4,7 +4,7 @@ import QRCode from "qrcode";
 import { db } from "@/lib/db";
 import { properties } from "@/lib/db/schema";
 import { requireOrgMember } from "@/lib/auth";
-import { chatUrl } from "@/lib/mail";
+import { conciergeQrUrl } from "@/lib/mail";
 
 // QR + link for the property-level concierge card (host-authenticated).
 export async function GET(
@@ -26,7 +26,7 @@ export async function GET(
     return Response.json({ error: "not found" }, { status: 404 });
   }
 
-  const url = chatUrl(prop.conciergeToken);
+  const url = conciergeQrUrl(prop.conciergeToken);
   const qr = await QRCode.toDataURL(url, { width: 600, margin: 1 });
   return Response.json({ url, qr, name: prop.name });
 }
