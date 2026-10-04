@@ -108,12 +108,14 @@ export default function LoginPage() {
               {pending ? <span className="spinner" /> : null}
               Email me a code
             </button>
-            <button
-              onClick={() => setMode("password")}
-              className="mx-auto block text-footnote text-ink-3 hover:text-ink"
-            >
-              Have an old password? Use it instead
-            </button>
+            {(process.env.NEXT_PUBLIC_ALLOW_PASSWORD_LOGIN ?? "true") !== "false" && (
+              <button
+                onClick={() => setMode("password")}
+                className="mx-auto block text-footnote text-ink-3 hover:text-ink"
+              >
+                Have an old password? Use it instead
+              </button>
+            )}
           </div>
         )}
 

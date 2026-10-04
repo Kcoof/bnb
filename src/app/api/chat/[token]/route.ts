@@ -210,11 +210,14 @@ export async function POST(
       // per-request accumulation of streamed tool-call fragments
       const toolCalls = new Map<number, { id: string; name: string; args: string }>();
 
-      const runCompletion = async (msgs: ChatCompletionMessageParam[]) => {
+      const runCompletion = async (
+        msgs: ChatCompletionMessageParam[],
+        tools: unknown[] = [escalateTool, nearbyTool],
+      ) => {
         const completion = await aiClient().chat.completions.create({
           model: aiModel(),
           messages: msgs,
-          tools: [escalateTool, nearbyTool],
+          tools: tools as never[],
           temperature: 0.2,
           max_tokens: 600,
           stream: true,
@@ -260,8 +263,10 @@ export async function POST(
         // pass 1 — may end with a tool call (nearby_search / escalate)
         await runCompletion(apiMessages);
 
-        // nearby_search (spec §5): live Places lookup, then answer from results
+        // nearby_search (spec §5): live Places lookup, then answer from results.
+        // Pass-1 escalate calls are preserved across the second pass (M8).
         const nearbyCall = [...toolCalls.values()].find((t) => t.name === "nearby_search");
+        const pass1Escalation = parseEscalation();
         if (nearbyCall) {
           toolCalls.clear();
           let query = "restaurant";
@@ -302,11 +307,12 @@ export async function POST(
               content: toolContent,
             },
           ];
-          // pass 2 — answer from the live results (may itself escalate)
-          await runCompletion(secondMessages);
+          // pass 2 — answer from the live results (escalate only; no third
+          // nearby call possible by construction)
+          await runCompletion(secondMessages, [escalateTool]);
         }
 
-        escalation = parseEscalation();
+        escalation = parseEscalation() ?? pass1Escalation;
       } catch (err) {
         // stream error mid-flight → system_note, no fake assistant message
         await db.insert(messages).values({

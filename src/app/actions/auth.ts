@@ -23,18 +23,27 @@ async function ensureOrgForUser(userId: string, email: string, fullName?: string
       .values({ name: `${displayName}'s stays` })
       .returning()
   )[0];
-  const profile = (
-    await db
-      .insert(profiles)
-      .values({
-        id: userId,
-        orgId: org.id,
-        fullName: displayName,
-        email,
-        role: "owner",
-      })
-      .returning()
-  )[0];
+  // concurrent first-login race: if another request already created this
+  // profile, drop our just-made org and reuse the winner's
+  const inserted = await db
+    .insert(profiles)
+    .values({
+      id: userId,
+      orgId: org.id,
+      fullName: displayName,
+      email,
+      role: "owner",
+    })
+    .onConflictDoNothing({ target: profiles.id })
+    .returning();
+  let profile = inserted[0];
+  if (!profile) {
+    await db.delete(organizations).where(eq_(organizations.id, org.id));
+    profile = (
+      await db.select().from(profiles).where(eq_(profiles.id, userId)).limit(1)
+    )[0];
+    return profile;
+  }
 
   await logEvent({
     orgId: org.id,

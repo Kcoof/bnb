@@ -210,19 +210,19 @@ export async function wizardSaveAppliancesAction(
       troubleshooting: tpl.defaultTroubleshooting,
     });
   }
-  // deselected: remove only untouched copies (no edits to protect in MVP —
-  // if the row exists it was just copied, so removing is safe pre-launch)
+  // deselected: remove only UNTOUCHED copies — never destroy host edits
   const keep = new Set(selectedTypes);
-  for (const type of have) {
-    if (!keep.has(type)) {
-      await db
-        .delete(propertyAppliances)
-        .where(
-          and(
-            eq(propertyAppliances.propertyId, propertyId),
-            eq(propertyAppliances.templateType, type),
-          ),
-        );
+  const rows = await db
+    .select()
+    .from(propertyAppliances)
+    .where(eq(propertyAppliances.propertyId, propertyId));
+  for (const row of rows) {
+    if (keep.has(row.templateType)) continue;
+    const tpl = templates.find((t) => t.type === row.templateType);
+    const untouched =
+      tpl && row.instructions === tpl.defaultInstructions && row.troubleshooting === tpl.defaultTroubleshooting;
+    if (untouched) {
+      await db.delete(propertyAppliances).where(eq(propertyAppliances.id, row.id));
     }
   }
   return {};
@@ -235,4 +235,31 @@ async function scoped(orgId: string, propertyId: string) {
     .where(and(eq(properties.id, propertyId), eq(properties.orgId, orgId)))
     .limit(1);
   return rows[0] ?? null;
+}
+
+/** Edit a property's appliance copy (host edits the copied text). */
+export async function saveApplianceAction(
+  propertyId: string,
+  templateType: string,
+  instructions: string,
+  troubleshooting: string,
+): Promise<{ error?: string }> {
+  const member = await requireOrgMember();
+  if (!member) return { error: "not signed in" };
+  const owned = await scoped(member.profile.orgId, propertyId);
+  if (!owned) return { error: "not found" };
+  await db
+    .update(propertyAppliances)
+    .set({
+      instructions: instructions.trim(),
+      troubleshooting: troubleshooting.trim(),
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(propertyAppliances.propertyId, propertyId),
+        eq(propertyAppliances.templateType, templateType),
+      ),
+    );
+  return {};
 }

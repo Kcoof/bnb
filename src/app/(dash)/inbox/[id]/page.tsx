@@ -58,8 +58,8 @@ export default async function ConversationPage({
     <div className="space-y-6">
       {/* Sticky frosted header */}
       <div className="sticky top-0 z-20 -mx-5 border-b border-hairline bg-[var(--nav-bg)] px-5 py-3 backdrop-blur-nav md:-mx-8 md:px-8">
-        <Link href="/inbox" className="text-callout text-accent hover:underline">
-          ‹ Inbox
+        <Link href="/dashboard" className="text-callout text-accent hover:underline">
+          ‹ Back
         </Link>
         <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2">
           <h1 className="text-title-3">{r.guestName ?? "(no guest name)"} — {p.name}</h1>

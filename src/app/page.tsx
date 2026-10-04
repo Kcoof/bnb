@@ -87,7 +87,7 @@ export default async function LandingPage() {
             Instant answers for guests. Fewer interruptions for you.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link href="/login" className="btn btn-primary btn-lg w-full sm:w-auto">
+            <Link href="/pricing" className="btn btn-primary btn-lg w-full sm:w-auto">
               Start Free Trial
             </Link>
             <a href="#how" className="btn btn-secondary btn-lg w-full sm:w-auto">

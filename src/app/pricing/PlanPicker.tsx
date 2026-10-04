@@ -61,10 +61,16 @@ export function PlanPicker(props: {
               </ul>
               <button
                 onClick={() => checkout(id)}
-                disabled={!props.billingConfigured || pending !== null || props.currentPlan === id}
+                disabled={!props.billingConfigured || pending !== null || props.currentPlan === id || props.status === "active" || props.status === "trialing"}
                 className={`mt-8 w-full ${isFeatured ? "btn btn-primary btn-md" : "btn btn-secondary btn-md"}`}
               >
-                {pending === id ? "Opening checkout…" : props.currentPlan === id ? "Current plan" : "Choose"}
+                {pending === id
+                  ? "Opening checkout…"
+                  : props.currentPlan === id
+                    ? "Your plan"
+                    : props.status === "active" || props.status === "trialing"
+                      ? "Contact support to change"
+                      : "Choose"}
               </button>
             </div>
           );

@@ -28,12 +28,12 @@ function kbSection(kb: Kb): string {
   add("Door / key access code", kb.doorCode);
   add("Check-in instructions", kb.checkinInstructions);
   add("Check-out instructions", kb.checkoutInstructions);
-  add("Check-out time", undefined);
   add("Parking", kb.parking);
   add("House rules", kb.houseRules);
   add("Emergency info", kb.emergencyInfo);
   add("Late checkout policy", kb.lateCheckoutPolicy);
   add("Nearby notes from the host", kb.nearby);
+  add("Additional appliance notes from the host", kb.appliances);
   const extras = kb.extras;
   if (Array.isArray(extras)) {
     for (const extra of extras) {
@@ -124,7 +124,7 @@ export async function buildSystemPrompt(reservationId: string): Promise<{
     ? `The guest is at the property now. Checkout time is ${prop.checkoutTime}.
 Today's date and local time: ${nowLocal} (${prop.timezone}).`
     : `The guest is staying from ${resv.checkIn} to ${resv.checkOut}.
-Checkout time is ${resv.checkOut === resv.checkIn ? prop.checkoutTime : prop.checkoutTime}.
+Checkout time is ${prop.checkoutTime}.
 Today's date and local time: ${nowLocal} (${prop.timezone}).`;
 
   const applianceBlock = appliances.length

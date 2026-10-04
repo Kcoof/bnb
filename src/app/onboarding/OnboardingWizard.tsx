@@ -21,7 +21,7 @@ export function OnboardingWizard(props: {
   templates: { type: string; label: string }[];
   propertyCount: number;
 }) {
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(props.propertyCount > 0 ? 1 : 0);
   const [propertyId, setPropertyId] = useState<string | null>(null);
 
   const [name, setName] = useState("");

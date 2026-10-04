@@ -25,8 +25,7 @@ export default async function TemplatesPage() {
       <h1 className="text-title-1">Email templates</h1>
       <nav className="flex gap-2 text-sm">
         <Link href="/settings" className="rounded-lg border border-hairline bg-white px-3 py-1.5 text-ink-2 hover:bg-surface-2">Organization</Link>
-        <Link href="/settings/team" className="rounded-lg border border-hairline bg-white px-3 py-1.5 text-ink-2 hover:bg-surface-2">Team</Link>
-        <span className="segmented-item segmented-item-active">Email templates</span>
+                <span className="segmented-item segmented-item-active">Email templates</span>
       </nav>
 
       <p className="text-sm text-ink-2">

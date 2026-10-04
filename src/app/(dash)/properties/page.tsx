@@ -19,7 +19,7 @@ export default async function PropertiesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-title-1">Properties</h1>
-        <Link href="/properties/new" className="btn btn-primary btn-md">
+        <Link href="/onboarding" className="btn btn-primary btn-md">
           <Icon name="plus" size={16} />
           Add property
         </Link>
@@ -34,7 +34,7 @@ export default async function PropertiesPage() {
           <p className="mt-1.5 max-w-xs text-callout text-ink-2">
             Set up your first concierge in about 5 minutes.
           </p>
-          <Link href="/properties/new" className="btn btn-primary btn-md mt-6">
+          <Link href="/onboarding" className="btn btn-primary btn-md mt-6">
             Set up your first concierge
           </Link>
         </div>

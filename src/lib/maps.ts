@@ -8,10 +8,11 @@ import "server-only";
 export type Coords = { latitude: number; longitude: number };
 
 const COORD_RE = /@(-?\d+\.\d+),(-?\d+\.\d+)/;
+const DATA_RE = /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/;
 const Q_RE = /[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/;
 
 function parseCoordsFromUrl(url: string): Coords | null {
-  const m = COORD_RE.exec(url) ?? Q_RE.exec(url);
+  const m = COORD_RE.exec(url) ?? DATA_RE.exec(url) ?? Q_RE.exec(url);
   if (!m) return null;
   const latitude = Number.parseFloat(m[1]);
   const longitude = Number.parseFloat(m[2]);

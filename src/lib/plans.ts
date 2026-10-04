@@ -41,9 +41,11 @@ export async function chatEnabledForOrg(orgId: string): Promise<boolean> {
   if (!sub) return true; // no billing row yet (pre-launch/dev)
   if (sub.status === "active" || sub.status === "trialing") return true;
   if (sub.status === "past_due") {
+    // no period info from Stripe → keep chat live (never punish the guest
+    // for a mirror gap); with a period end, grace runs GRACE_DAYS past it
     const cutoff = sub.currentPeriodEnd
       ? new Date(sub.currentPeriodEnd).getTime() + GRACE_DAYS * 86400_000
-      : Date.now() + 1; // no period info — err on the guest's side
+      : Infinity;
     return Date.now() < cutoff;
   }
   return false; // canceled / unpaid / incomplete_expired

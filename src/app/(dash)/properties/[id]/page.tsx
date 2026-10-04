@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { events, properties, propertyKnowledge } from "@/lib/db/schema";
+import { events, properties, propertyAppliances, propertyKnowledge } from "@/lib/db/schema";
 import { requireOrgMember } from "@/lib/auth";
 import { StatusPill } from "@/components/StatusPill";
 import { Icon } from "@/components/Icon";
@@ -10,6 +10,7 @@ import { PropertyDetailsForm } from "./PropertyDetailsForm";
 import { KnowledgeForm } from "./KnowledgeForm";
 import { IcsPanel } from "./IcsPanel";
 import { TestQuestionForm } from "./TestQuestionForm";
+import { AppliancesEditor } from "./AppliancesEditor";
 
 const TABS = ["details", "kb", "ics", "history"] as const;
 
@@ -39,6 +40,14 @@ export default async function PropertyPage({
     return <p className="text-sm text-ink-2">Property not found.</p>;
   }
   const { p, kb } = row;
+
+  const appliances =
+    tab === "kb"
+      ? await db
+          .select()
+          .from(propertyAppliances)
+          .where(eq(propertyAppliances.propertyId, p.id))
+      : [];
 
   const history =
     tab === "history"
@@ -127,6 +136,7 @@ export default async function PropertyPage({
             }}
             extras={Array.isArray(kb.extras) ? (kb.extras as { topic: string; content: string }[]) : []}
           />
+          <AppliancesEditor propertyId={p.id} appliances={appliances.map((a) => ({ templateType: a.templateType, label: a.label, instructions: a.instructions, troubleshooting: a.troubleshooting }))} />
           <TestQuestionForm propertyId={p.id} />
         </div>
       )}

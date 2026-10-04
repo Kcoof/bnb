@@ -43,6 +43,7 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname !== "/" && // landing page is public
     !request.nextUrl.pathname.startsWith("/login") &&
     !request.nextUrl.pathname.startsWith("/chat/") &&
+    !request.nextUrl.pathname.startsWith("/q/") && // printed QR resolver — guests
     !request.nextUrl.pathname.startsWith("/c/") &&
     !request.nextUrl.pathname.startsWith("/api/")
   ) {

@@ -33,7 +33,11 @@ export async function POST(request: NextRequest) {
     const orgId = sub.metadata?.orgId;
     if (!orgId) return;
     const item = sub.items.data[0];
-    const plan = planFor(item?.price.id) ?? "starter";
+    const plan =
+      planFor(item?.price.id) ??
+      (sub.metadata?.plan === "professional" || sub.metadata?.plan === "business" || sub.metadata?.plan === "starter"
+        ? sub.metadata.plan
+        : "starter");
     const limit = PLANS[plan].propertyLimit;
     const values = {
       orgId,
@@ -41,7 +45,7 @@ export async function POST(request: NextRequest) {
       stripeSubscriptionId: sub.id,
       plan,
       status: sub.status, // active | past_due | canceled | trialing …
-      currentPeriodEnd: new Date((item?.current_period_end ?? Math.floor(Date.now() / 1000) + 30 * 86400) * 1000),
+      currentPeriodEnd: item?.current_period_end ? new Date(item.current_period_end * 1000) : null,
       propertyLimit: limit,
       updatedAt: new Date(),
     };

@@ -93,7 +93,13 @@ export function ChatWidget(props: {
       }
       if (!res.ok || !res.body) {
         setMessages((prev) => prev.slice(0, -1));
-        setError(res.status === 404 ? "This link is no longer active." : "Something went wrong — please try again.");
+        setError(
+          res.status === 404
+            ? "This link is no longer active."
+            : res.status === 402
+              ? "The concierge is briefly unavailable — your host has been notified. For urgent help, contact them via your booking app."
+              : "Something went wrong — please try again.",
+        );
         setStreaming(false);
         return;
       }

@@ -1,12 +1,7 @@
-import { requireOrgMember } from "@/lib/auth";
-import { PropertyWizard } from "./PropertyWizard";
+import { redirect } from "next/navigation";
 
-export default async function NewPropertyPage() {
-  const member = await requireOrgMember();
-  if (!member) return null;
-  return (
-    <div className="mx-auto max-w-2xl">
-      <PropertyWizard />
-    </div>
-  );
+// The v2 one-question wizard owns all property creation (plan limits enforced
+// in wizardStartAction) — the old form wizard is retired.
+export default function NewPropertyRedirect() {
+  redirect("/onboarding");
 }
