@@ -8,7 +8,7 @@ import { requireOrgMember } from "@/lib/auth";
 import { logEvent } from "@/lib/audit";
 import { applyStatus } from "@/lib/status";
 import { generateTaskToken } from "@/lib/tokens";
-import { inngest } from "@/lib/inngest/client";
+import { sendEvent } from "@/lib/inngest/client";
 import { localAt } from "@/lib/time";
 
 export async function assignCleanerAction(
@@ -44,7 +44,7 @@ export async function assignCleanerAction(
     action: "task.cleaner_assigned",
   });
   if (cleaner.email) {
-    await inngest.send({ name: "cleaner/assigned", data: { taskId } });
+    await sendEvent("cleaner/assigned", { taskId });
   }
   revalidatePath("/tasks");
   return {};
@@ -167,7 +167,7 @@ export async function createAdHocTaskAction(input: {
   )[0];
 
   if (cleaner) {
-    await inngest.send({ name: "cleaner/assigned", data: { taskId: inserted.id } });
+    await sendEvent("cleaner/assigned", { taskId: inserted.id });
   }
   await logEvent({
     orgId: member.profile.orgId,

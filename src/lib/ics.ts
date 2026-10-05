@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { properties, reservations, scheduledMessages, tasks } from "@/lib/db/schema";
 import { logEvent } from "@/lib/audit";
 import { generateGuestToken } from "@/lib/tokens";
-import { inngest } from "@/lib/inngest/client";
+import { sendEvent } from "@/lib/inngest/client";
 
 // ICS fetch + parse + diff — plan §5.1/§1.4.
 
@@ -153,10 +153,7 @@ export async function syncPropertyIcs(propertyId: string): Promise<IcsResult> {
           .returning({ id: reservations.id });
         result.created++;
         if (!isHold && inserted[0]) {
-          await inngest.send({
-            name: "reservation/created",
-            data: { reservationId: inserted[0].id },
-          });
+          await sendEvent("reservation/created", { reservationId: inserted[0].id },);
         }
       } else if (
         existing.checkIn !== checkIn ||
@@ -169,10 +166,7 @@ export async function syncPropertyIcs(propertyId: string): Promise<IcsResult> {
         result.updated++;
         // date changes reschedule pending messages (plan §1.4)
         if (!existing.isHold && existing.status === "upcoming") {
-          await inngest.send({
-            name: "reservation/created",
-            data: { reservationId: existing.id },
-          });
+          await sendEvent("reservation/created", { reservationId: existing.id },);
         }
       }
     }

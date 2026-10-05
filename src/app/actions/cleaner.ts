@@ -7,7 +7,7 @@ import { escalations, tasks } from "@/lib/db/schema";
 import { validateTaskToken } from "@/lib/tokens";
 import { applyStatus } from "@/lib/status";
 import { logEvent } from "@/lib/audit";
-import { inngest } from "@/lib/inngest/client";
+import { sendEvent } from "@/lib/inngest/client";
 
 // Public cleaner actions — authenticated by task token only (plan §1.4).
 
@@ -95,10 +95,7 @@ export async function cleanerReportProblemAction(
       })
       .returning({ id: escalations.id })
   )[0];
-  await inngest.send({
-    name: "escalation/created",
-    data: { escalationId: inserted.id },
-  });
+  await sendEvent("escalation/created", { escalationId: inserted.id },);
   revalidatePath(`/c/${token}`);
   return {};
 }

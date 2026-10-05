@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { inngest } from "@/lib/inngest/client";
+import { inngest, sendEvent } from "@/lib/inngest/client";
 import { db } from "@/lib/db";
 import { cleaners, properties, reservations, tasks } from "@/lib/db/schema";
 import { applyStatus } from "@/lib/status";
@@ -153,10 +153,7 @@ export async function ensureCleaningTask(reservationId: string): Promise<string 
   if (!inserted[0]) return null;
 
   if (cleaner?.email) {
-    await inngest.send({
-      name: "cleaner/assigned",
-      data: { taskId: inserted[0].id },
-    });
+    await sendEvent("cleaner/assigned", { taskId: inserted[0].id },);
   }
   return inserted[0].id;
 }

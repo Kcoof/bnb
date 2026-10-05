@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { conversations, escalations, messages } from "@/lib/db/schema";
 import { requireOrgMember } from "@/lib/auth";
 import { logEvent } from "@/lib/audit";
-import { inngest } from "@/lib/inngest/client";
+import { sendEvent } from "@/lib/inngest/client";
 
 export async function hostReplyAction(
   conversationId: string,
@@ -63,10 +63,7 @@ export async function hostReplyAction(
   });
 
   // guest email #5 — one per host message
-  await inngest.send({
-    name: "conversation/host.replied",
-    data: { conversationId },
-  });
+  await sendEvent("conversation/host.replied", { conversationId },);
 
   revalidatePath(`/inbox/${conversationId}`);
   revalidatePath("/inbox");

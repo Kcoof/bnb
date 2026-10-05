@@ -12,7 +12,7 @@ import {
 import { validateGuestToken } from "@/lib/tokens";
 import { buildSystemPrompt, prefilterHit } from "@/lib/ai/prompt";
 import { aiClient, aiModel, escalateTool, nearbyTool } from "@/lib/ai/client";
-import { inngest } from "@/lib/inngest/client";
+import { sendEvent } from "@/lib/inngest/client";
 import { searchNearby } from "@/lib/places";
 import { chatEnabledForOrg } from "@/lib/plans";
 
@@ -142,10 +142,7 @@ export async function POST(
       })
       .returning({ id: escalations.id });
     if (esc[0]) {
-      await inngest.send({
-        name: "escalation/created",
-        data: { escalationId: esc[0].id },
-      });
+      await sendEvent("escalation/created", { escalationId: esc[0].id },);
     }
     return new Response(fallbackText, {
       headers: {
@@ -206,10 +203,7 @@ export async function POST(
       })
       .returning({ id: escalations.id });
     if (insertedEsc[0]) {
-      await inngest.send({
-        name: "escalation/created",
-        data: { escalationId: insertedEsc[0].id },
-      });
+      await sendEvent("escalation/created", { escalationId: insertedEsc[0].id },);
     }
 
     return new Response(emergencyText, {
@@ -394,10 +388,7 @@ export async function POST(
           })
           .returning({ id: escalations.id });
         if (inserted[0]) {
-          await inngest.send({
-            name: "escalation/created",
-            data: { escalationId: inserted[0].id },
-          });
+          await sendEvent("escalation/created", { escalationId: inserted[0].id },);
         }
       }
 

@@ -7,7 +7,7 @@ import { properties, reservations } from "@/lib/db/schema";
 import { requireOrgMember } from "@/lib/auth";
 import { logEvent } from "@/lib/audit";
 import { generateGuestToken } from "@/lib/tokens";
-import { inngest } from "@/lib/inngest/client";
+import { sendEvent } from "@/lib/inngest/client";
 
 export async function createReservationAction(input: {
   propertyId: string;
@@ -66,10 +66,7 @@ export async function createReservationAction(input: {
     entityId: inserted.id,
     action: "reservation.created",
   });
-  await inngest.send({
-    name: "reservation/created",
-    data: { reservationId: inserted.id },
-  });
+  await sendEvent("reservation/created", { reservationId: inserted.id },);
 
   revalidatePath("/reservations");
   return { id: inserted.id };
@@ -108,10 +105,7 @@ export async function updateReservationAction(
     .where(eq(reservations.id, reservationId));
 
   if (datesChanged && existing.status === "upcoming") {
-    await inngest.send({
-      name: "reservation/created",
-      data: { reservationId },
-    });
+    await sendEvent("reservation/created", { reservationId },);
   }
 
   await logEvent({
