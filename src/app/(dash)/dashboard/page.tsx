@@ -117,7 +117,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       <div className="animate-fade-up">
-        <h1 className="text-title-1">
+        <h1 className="font-display text-title-1">
           {greeting}, {firstName}.
         </h1>
         <p className="mt-0.5 text-callout text-ink-2">

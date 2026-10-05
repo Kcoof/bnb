@@ -42,7 +42,7 @@ export function PlanPicker(props: {
                   : "rounded-[24px] border border-hairline bg-surface p-8"
               }
             >
-              <div className={`text-callout font-medium ${isFeatured ? "text-[#6db2ff]" : "text-accent"}`}>
+              <div className={`text-callout font-medium ${isFeatured ? "text-[#C9A87C]" : "text-accent"}`}>
                 {p.name}
               </div>
               <div className="mt-3 flex items-baseline gap-1">

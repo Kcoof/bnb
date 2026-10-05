@@ -27,7 +27,7 @@
 
   /* materials */
   --nav-bg: rgba(248, 246, 241, 0.85); /* frosted linen */
-  --sidebar-bg: rgba(248, 246 241, 0.85);
+  --sidebar-bg: rgba(248, 246, 241, 0.85);
   --overlay: rgb(0 0 0 / 0.32);
 
   /* radii */
@@ -83,18 +83,15 @@
   --text-display: clamp(2.75rem, 1.4rem + 6vw, 5rem);
   --text-display--line-height: 1.04;
   --text-display--letter-spacing: -0.035em;
-  --text-display--font-weight: 400;
-  --text-display--font-family: var(--font-display);
+  --text-display--font-weight: 600;
   --text-headline: clamp(2rem, 1.4rem + 2.4vw, 3rem);
   --text-headline--line-height: 1.1;
   --text-headline--letter-spacing: -0.03em;
-  --text-headline--font-weight: 400;
-  --text-headline--font-family: var(--font-display);
+  --text-headline--font-weight: 600;
   --text-title-1: 1.75rem;
   --text-title-1--line-height: 1.15;
   --text-title-1--letter-spacing: -0.02em;
-  --text-title-1--font-weight: 400;
-  --text-title-1--font-family: var(--font-display);
+  --text-title-1--font-weight: 600;
   --text-title-2: 1.25rem;
   --text-title-2--line-height: 1.2;
   --text-title-2--letter-spacing: -0.015em;
@@ -121,9 +118,9 @@
   --radius-xl: 28px;
 
   /* shadows */
-  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 4px 12px rgb(0 0 0 / 0.03);
-  --shadow-raised: 0 2px 6px rgb(0 0 0 / 0.05), 0 10px 28px rgb(0 0 0 / 0.07);
-  --shadow-float: 0 4px 12px rgb(0 0 0 / 0.08), 0 24px 56px rgb(0 0 0 / 0.12);
+  --shadow-card: 0 1px 2px rgba(25, 24, 22, 0.03), 0 8px 24px rgba(25, 24, 22, 0.04);
+  --shadow-raised: 0 4px 12px rgba(25, 24, 22, 0.06), 0 16px 32px rgba(25, 24, 22, 0.06);
+  --shadow-float: 0 4px 12px rgba(25, 24, 22, 0.08), 0 24px 56px rgba(25, 24, 22, 0.12);
 
   /* blur */
   --blur-nav: 20px;
@@ -141,6 +138,10 @@
   --animate-sheet-up: sheet-up 0.35s var(--ease-sheet) both;
   --animate-toast-in: toast-in 0.25s var(--ease-out) both;
   --animate-typing: typing-dot 0.9s var(--ease-standard) infinite;
+}
+
+@layer components {
+  .font-display { font-family: var(--font-display); font-weight: 400; letter-spacing: -0.015em; }
 }
 
 body {

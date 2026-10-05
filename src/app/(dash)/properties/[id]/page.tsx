@@ -72,7 +72,7 @@ export default async function PropertyPage({
           <Link href="/properties" className="text-xs text-ink-2 hover:text-accent hover:underline">
             ← Properties
           </Link>
-          <h1 className="text-title-1">{p.name}</h1>
+          <h1 className="font-display text-title-1">{p.name}</h1>
         </div>
         <div className="flex items-center gap-2">
           {p.conciergeToken && (

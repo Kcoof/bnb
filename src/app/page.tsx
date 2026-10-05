@@ -81,10 +81,10 @@ export default async function LandingPage() {
           </p>
           <h1 className="mx-auto mt-4 max-w-3xl text-display">
             Your property&apos;s AI concierge.
-            <span className="block text-ink-3">Available 24/7.</span>
+            <span className="block text-ink-2">Available 24/7.</span>
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-[19px] leading-relaxed text-ink-2">
-            Never answer "What's the WiFi password?" at 3:00 AM again.
+            Never answer &#34;What&#39;s the WiFi password?&#34; at 3:00 AM again.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link href="/pricing" className="btn btn-primary btn-lg w-full sm:w-auto">

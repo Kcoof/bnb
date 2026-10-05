@@ -219,7 +219,7 @@ export function OnboardingWizard(props: {
                           flashSaved();
                         }
                       }}
-                      className="h-[18px] w-[18px] accent-[#0071e3]"
+                      className="h-[18px] w-[18px] accent-[#1E2B24]"
                     />
                     {t.label}
                   </label>
