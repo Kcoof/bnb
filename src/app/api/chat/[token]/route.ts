@@ -376,6 +376,12 @@ export async function POST(
         after(() => sendEvent("escalation/created", { escalationId: escId! }));
       }
 
+      if (escalation && !full.trim()) {
+        // model escalated without text — the guest still gets a kind reply
+        full = "Let me check with your host and get right back to you on that.";
+        controller.enqueue(encoder.encode(full));
+      }
+
       controller.close();
     },
   });
