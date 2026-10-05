@@ -1,7 +1,11 @@
 import "server-only";
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 
-// requireOrgMember — plan §3.4. Every (dash) page and action calls this.
+// requireOrgMember — the security boundary for all host data access
+// (PERF-PLAN §1.2). React cache() dedupes the getUser() + profiles lookup
+// across layout + page + nested components within ONE request; server
+// actions are separate requests and keep their own call.
 export type OrgMember = {
   userId: string;
   email: string;
@@ -13,7 +17,7 @@ export type OrgMember = {
   };
 };
 
-export async function requireOrgMember(): Promise<OrgMember | null> {
+export const requireOrgMember = cache(async (): Promise<OrgMember | null> => {
   const supabase = await createClient();
   const {
     data: { user },
@@ -39,4 +43,4 @@ export async function requireOrgMember(): Promise<OrgMember | null> {
       role: profile.role,
     },
   };
-}
+});

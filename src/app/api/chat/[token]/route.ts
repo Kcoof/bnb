@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import { db } from "@/lib/db";
 import {
@@ -9,12 +9,12 @@ import {
   properties,
   propertyKnowledge,
 } from "@/lib/db/schema";
-import { validateGuestToken } from "@/lib/tokens";
+import { loadGuestChatContext } from "@/lib/tokens";
 import { buildSystemPrompt, prefilterHit } from "@/lib/ai/prompt";
 import { aiClient, aiModel, escalateTool, nearbyTool } from "@/lib/ai/client";
 import { sendEvent } from "@/lib/inngest/client";
 import { searchNearby } from "@/lib/places";
-import { chatEnabledForOrg } from "@/lib/plans";
+import { after } from "next/server";
 
 export const maxDuration = 60;
 
@@ -34,14 +34,19 @@ export async function POST(
   { params }: { params: Promise<{ token: string }> },
 ) {
   const { token } = await params;
-  const ctx = await validateGuestToken(token);
+  // PERF-PLAN §1.4 phase 1: ONE joined query = validity + billing + context
+  const ctx = await loadGuestChatContext(token);
   if (!ctx) {
     return Response.json({ error: "link_not_active" }, { status: 404 });
   }
-  if (!(await chatEnabledForOrg(ctx.reservation.orgId))) {
+  if (!ctx.chatEnabled) {
     return Response.json({ error: "chat_paused" }, { status: 402 });
   }
   const { reservation } = ctx;
+  const conversationId = ctx.conversationId;
+  if (!conversationId) {
+    return Response.json({ error: "link_not_active" }, { status: 404 });
+  }
 
   const body = (await request.json().catch(() => null)) as
     | { message?: string }
@@ -54,68 +59,42 @@ export async function POST(
     return Response.json({ error: "message_too_long" }, { status: 413 });
   }
 
-  // conversation row must exist (created with the reservation)
-  const convRow = (
+  // phase 2: rate limits in ONE combined query (last guest msg + 24h count)
+  const rateRow = (
     await db
-      .select({ id: conversations.id })
-      .from(conversations)
-      .where(eq(conversations.reservationId, reservation.id))
-      .limit(1)
-  )[0];
-  if (!convRow) {
-    return Response.json({ error: "link_not_active" }, { status: 404 });
-  }
-  const conversationId = convRow.id;
-
-  // rate limits (§1.4): ≥8s since last GUEST message, not last message of any role
-  const lastGuest = (
-    await db
-      .select({ createdAt: messages.createdAt })
+      .select({
+        lastGuestAt: sql<string | null>`max(${messages.createdAt}) filter (where ${messages.role} = 'guest')`,
+        dailyCount: sql<number>`count(*) filter (where ${messages.role} = 'guest' and ${messages.createdAt} > now() - interval '24 hours')::int`,
+      })
       .from(messages)
-      .where(
-        and(
-          eq(messages.conversationId, conversationId),
-          eq(messages.role, "guest"),
-        ),
-      )
-      .orderBy(desc(messages.createdAt))
-      .limit(1)
+      .where(eq(messages.conversationId, conversationId))
   )[0];
   if (
-    lastGuest &&
-    Date.now() - new Date(lastGuest.createdAt).getTime() < MIN_INTERVAL_MS
+    rateRow?.lastGuestAt &&
+    Date.now() - new Date(rateRow.lastGuestAt).getTime() < MIN_INTERVAL_MS
   ) {
     return Response.json({ error: "too_fast" }, { status: 429 });
   }
-  const dayAgo = new Date(Date.now() - 24 * 3600_000);
-  const daily = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(messages)
-    .where(
-      and(
-        eq(messages.conversationId, conversationId),
-        eq(messages.role, "guest"),
-        gte(messages.createdAt, dayAgo),
-      ),
-    );
-  if ((daily[0]?.count ?? 0) >= MAX_PER_DAY) {
+  if ((rateRow?.dailyCount ?? 0) >= MAX_PER_DAY) {
     return Response.json({ error: "daily_limit" }, { status: 429 });
   }
 
   // persist the guest message before calling the model (§4.6)
-  await db.insert(messages).values({
-    orgId: reservation.orgId,
-    conversationId,
-    role: "guest",
-    content: guestMessage,
-  });
-  await db
-    .update(conversations)
-    .set({
-      lastMessageAt: new Date(),
-      hostUnreadCount: sql`${conversations.hostUnreadCount} + 1`,
-    })
-    .where(eq(conversations.id, conversationId));
+  await Promise.all([
+    db.insert(messages).values({
+      orgId: reservation.orgId,
+      conversationId,
+      role: "guest",
+      content: guestMessage,
+    }),
+    db
+      .update(conversations)
+      .set({
+        lastMessageAt: new Date(),
+        hostUnreadCount: sql`${conversations.hostUnreadCount} + 1`,
+      })
+      .where(eq(conversations.id, conversationId)),
+  ]);
 
   // ── AI-not-configured guard: fail fast and honestly instead of burning
   // the guest's time on a doomed model call. Escalate so the host still
@@ -359,20 +338,42 @@ export async function POST(
         );
       }
 
-      if (full.trim()) {
-        await db.insert(messages).values({
-          orgId: reservation.orgId,
-          conversationId,
-          role: "assistant",
-          content: full,
-          model: meta.model,
-          escalated: escalation !== null,
-          escalationReason: escalation?.reason ?? null,
-        });
-        await db
+      let escId: string | undefined;
+      await Promise.all([
+        full.trim()
+          ? db.insert(messages).values({
+              orgId: reservation.orgId,
+              conversationId,
+              role: "assistant",
+              content: full,
+              model: meta.model,
+              escalated: escalation !== null,
+              escalationReason: escalation?.reason ?? null,
+            })
+          : Promise.resolve(null),
+        db
           .update(conversations)
           .set({ lastMessageAt: new Date() })
-          .where(eq(conversations.id, conversationId));
+          .where(eq(conversations.id, conversationId)),
+        escalation
+          ? db
+              .insert(escalations)
+              .values({
+                orgId: reservation.orgId,
+                source: "chat",
+                conversationId,
+                reason: escalation.reason,
+                summary: escalation.summary,
+                urgency: escalation.urgency,
+              })
+              .returning({ id: escalations.id })
+              .then((r) => {
+                escId = r[0]?.id;
+              })
+          : Promise.resolve(null),
+      ]);
+      if (escId) {
+        after(() => sendEvent("escalation/created", { escalationId: escId! }));
       }
 
       if (escalation) {

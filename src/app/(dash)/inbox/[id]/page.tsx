@@ -70,7 +70,7 @@ export default async function ConversationPage({
             reservation
           </Link>
           {r.chatToken && (
-            <CopyButton text={chatUrl(r.chatToken)} label="Copy chat link" className="h-7 px-2 text-[12px]" />
+            <CopyButton text={chatUrl(r.chatToken)} label="Copy chat link" className="h-9 px-2.5 text-[13px]" />
           )}
         </div>
       </div>

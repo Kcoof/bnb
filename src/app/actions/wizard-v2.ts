@@ -29,24 +29,32 @@ export async function wizardStartAction(input: {
   if (!member) return { error: "not signed in" };
   if (!input.name.trim()) return { error: "Please enter a name." };
 
-  // property limit per plan (spec §13) — Stripe is truth, local row is mirror
-  const sub = (
-    await db
-      .select()
-      .from(subscriptions)
-      .where(eq(subscriptions.orgId, member.profile.orgId))
-      .limit(1)
-  )[0];
-  const count = (
-    await db
-      .select({ n: sql<number>`count(*)::int` })
-      .from(properties)
-      .where(eq(properties.orgId, member.profile.orgId))
-  )[0]?.n ?? 0;
-  const limit = sub?.propertyLimit ?? 1;
-  const billingOk = !sub || sub.status === "active" || sub.status === "trialing" || sub.status === "past_due";
-  if (!billingOk) return { error: "billing" };
-  if (count >= limit) return { error: "limit" };
+  // property limit per plan (spec §13) — Stripe is truth, local row is
+  // mirror. PERF-PLAN §2: with billing NOT configured the paywall cannot be
+  // completed, so the limit never blocks (pre-launch unlimited, tagged in
+  // the audit log). Setting STRIPE_SECRET_KEY reactivates this check as-is.
+  let preLaunch = false;
+  if (process.env.STRIPE_SECRET_KEY) {
+    const sub = (
+      await db
+        .select()
+        .from(subscriptions)
+        .where(eq(subscriptions.orgId, member.profile.orgId))
+        .limit(1)
+    )[0];
+    const count = (
+      await db
+        .select({ n: sql<number>`count(*)::int` })
+        .from(properties)
+        .where(eq(properties.orgId, member.profile.orgId))
+    )[0]?.n ?? 0;
+    const limit = sub?.propertyLimit ?? 1;
+    const billingOk = !sub || sub.status === "active" || sub.status === "trialing" || sub.status === "past_due";
+    if (!billingOk) return { error: "billing" };
+    if (count >= limit) return { error: "limit" };
+  } else {
+    preLaunch = true;
+  }
 
   const token = conciergeToken();
   const prop = (
@@ -92,7 +100,9 @@ export async function wizardStartAction(input: {
     entity: "property",
     entityId: prop.id,
     action: "property.created",
-    metadata: { via: "wizard-v2" },
+    metadata: preLaunch
+      ? { via: "wizard-v2", billing: "pre-launch-unlimited" }
+      : { via: "wizard-v2" },
   });
   revalidatePath("/properties");
   return { propertyId: prop.id };

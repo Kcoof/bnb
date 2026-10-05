@@ -1,39 +1,50 @@
 import { NextRequest } from "next/server";
-import { and, eq, gt } from "drizzle-orm";
+import { and, eq, gt, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { conversations, messages } from "@/lib/db/schema";
-import { validateGuestToken } from "@/lib/tokens";
+import { conversations, messages, properties, reservations } from "@/lib/db/schema";
+import { TOKEN_PRE_DAYS, TOKEN_POST_DAYS } from "@/lib/tokens";
 
 export const maxDuration = 30;
 
-// Guest page poll for host replies (§4.6) — every 15s from the chat widget.
+// Guest poll (every 15s) — PERF-PLAN §1.5: one JOIN instead of three queries.
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> },
 ) {
   const { token } = await params;
-  const ctx = await validateGuestToken(token);
-  if (!ctx) return Response.json({ error: "link_not_active" }, { status: 404 });
-
-  const afterRaw = request.nextUrl.searchParams.get("after");
-  let after: Date | null = null;
-  if (afterRaw) {
-    const parsed = new Date(afterRaw);
-    after = Number.isNaN(parsed.getTime()) ? null : parsed;
-  }
-  const convRow = (
-    await db
-      .select({ id: conversations.id })
-      .from(conversations)
-      .where(eq(conversations.reservationId, ctx.reservation.id))
-      .limit(1)
-  )[0];
-  if (!convRow) return Response.json({ messages: [] });
-
-  const conditions = [eq(messages.conversationId, convRow.id)];
-  if (after) conditions.push(gt(messages.createdAt, after));
+  const after = request.nextUrl.searchParams.get("after");
 
   const rows = await db
+    .select({ id: conversations.id })
+    .from(conversations)
+    .innerJoin(reservations, eq(conversations.reservationId, reservations.id))
+    .innerJoin(properties, eq(reservations.propertyId, properties.id))
+    .where(
+      and(
+        eq(reservations.chatToken, token),
+        eq(reservations.isHold, false),
+        sql`(
+          ${reservations.isConcierge}
+          or (
+            ${reservations.status} in ('upcoming', 'arrived')
+            and ${reservations.checkIn} <= current_date + ${TOKEN_PRE_DAYS}
+            and ${reservations.checkOut} >= current_date - ${TOKEN_POST_DAYS}
+          )
+        )`,
+      ),
+    )
+    .limit(1);
+
+  const convId = rows[0]?.id;
+  if (!convId) return Response.json({ messages: [] });
+
+  const conditions = [eq(messages.conversationId, convId)];
+  if (after) {
+    const parsed = new Date(after);
+    if (!Number.isNaN(parsed.getTime())) conditions.push(gt(messages.createdAt, parsed));
+  }
+
+  const list = await db
     .select({
       role: messages.role,
       content: messages.content,
@@ -45,7 +56,7 @@ export async function GET(
 
   return Response.json(
     {
-      messages: rows
+      messages: list
         .filter((r) => r.role !== "system_note")
         .map((r) => ({ role: r.role, content: r.content, createdAt: r.createdAt })),
     },

@@ -2,7 +2,7 @@ import "server-only";
 import { randomBytes } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { properties, reservations, tasks } from "@/lib/db/schema";
+import { properties, reservations, subscriptions, tasks, propertyKnowledge, conversations } from "@/lib/db/schema";
 
 // Token design — plan §3.3.
 export const TOKEN_PRE_DAYS = 3; // guest link live from check-in − 3 days
@@ -85,4 +85,73 @@ export async function validateTaskToken(
   expires.setUTCDate(expires.getUTCDate() + 7);
   if (new Date() > expires) return null;
   return { task };
+}
+
+// ── PERF-PLAN §1.4: one joined query that answers everything the chat
+// routes need — token validity, billing state, and the full AI context.
+export type GuestChatContext = {
+  reservation: typeof reservations.$inferSelect;
+  property: typeof properties.$inferSelect;
+  kb: typeof propertyKnowledge.$inferSelect | null;
+  conversationId: string | null;
+  chatEnabled: boolean;
+};
+
+export async function loadGuestChatContext(
+  token: string,
+): Promise<GuestChatContext | null> {
+  if (!token.startsWith("gst_") && !token.startsWith("cnc_")) return null;
+
+  const rows = await db
+    .select({
+      reservation: reservations,
+      property: properties,
+      kb: propertyKnowledge,
+      conversationId: conversations.id,
+      subStatus: subscriptions.status,
+      subPeriodEnd: subscriptions.currentPeriodEnd,
+    })
+    .from(reservations)
+    .innerJoin(properties, eq(reservations.propertyId, properties.id))
+    .leftJoin(propertyKnowledge, eq(propertyKnowledge.propertyId, properties.id))
+    .leftJoin(conversations, eq(conversations.reservationId, reservations.id))
+    .leftJoin(subscriptions, eq(subscriptions.orgId, reservations.orgId))
+    .where(eq(reservations.chatToken, token))
+    .limit(1);
+
+  const row = rows[0];
+  if (!row) return null;
+  const { reservation, property } = row;
+  if (reservation.isHold) return null;
+
+  if (!reservation.isConcierge) {
+    if (reservation.status !== "upcoming" && reservation.status !== "arrived")
+      return null;
+    const now = new Date();
+    if (now < addDays(reservation.checkIn, -TOKEN_PRE_DAYS)) return null;
+    if (now > addDays(reservation.checkOut, TOKEN_POST_DAYS)) return null;
+  }
+
+  // billing gate — same policy as chatEnabledForOrg (plans.ts)
+  let chatEnabled = true;
+  if (row.subStatus) {
+    if (row.subStatus === "active" || row.subStatus === "trialing") {
+      chatEnabled = true;
+    } else if (row.subStatus === "past_due") {
+      const cutoff = row.subPeriodEnd
+        ? new Date(row.subPeriodEnd).getTime() + 7 * 86400_000
+        : Infinity;
+      chatEnabled = Date.now() < cutoff;
+    } else {
+      chatEnabled = false;
+    }
+  }
+
+  return {
+    reservation,
+    property,
+    kb: row.kb ?? null,
+    conversationId: row.conversationId ?? null,
+    chatEnabled,
+  };
 }

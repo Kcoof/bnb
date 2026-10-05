@@ -10,18 +10,20 @@ export async function GET(request: NextRequest) {
   const code = url.searchParams.get("code");
 
   const supabase = await createClient();
+  let user = null as null | { id: string; email?: string; user_metadata?: Record<string, unknown> };
   if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    // use the session the exchange returned — no second getUser() round trip
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
       return Response.redirect(
         new URL("/login?error=" + encodeURIComponent(error.message), url.origin),
       );
     }
+    user = data.session?.user ?? null;
+  } else {
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
   }
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   if (!user?.email) {
     return Response.redirect(new URL("/login", url.origin));
@@ -30,7 +32,7 @@ export async function GET(request: NextRequest) {
   // ensureOrgForUser needs DB + service context; inline the same logic here
   // using the supabase (RLS) client would fail pre-profile. Import lazily.
   const { ensureOrgForUser } = await import("@/app/actions/auth");
-  await ensureOrgForUser(user.id, user.email, user.user_metadata?.full_name);
+  await ensureOrgForUser(user.id, user.email, user.user_metadata?.full_name as string | undefined);
 
   const { data: props } = await supabase.from("properties").select("id").limit(1);
   const hasProperties = (props?.length ?? 0) > 0;
