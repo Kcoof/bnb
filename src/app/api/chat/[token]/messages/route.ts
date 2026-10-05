@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import { and, eq, gt, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { conversations, messages, properties, reservations } from "@/lib/db/schema";
-import { TOKEN_PRE_DAYS, TOKEN_POST_DAYS } from "@/lib/tokens";
 
 export const maxDuration = 30;
 
@@ -27,8 +26,8 @@ export async function GET(
           ${reservations.isConcierge}
           or (
             ${reservations.status} in ('upcoming', 'arrived')
-            and ${reservations.checkIn} <= current_date + ${TOKEN_PRE_DAYS}
-            and ${reservations.checkOut} >= current_date - ${TOKEN_POST_DAYS}
+            and ${reservations.checkIn} <= current_date + interval '3 days'
+            and ${reservations.checkOut} >= current_date - interval '2 days'
           )
         )`,
       ),
