@@ -101,7 +101,7 @@ export async function POST(
   // gets the message (spec: graceful degradation of unconfigured envs).
   if (!aiKey()) {
     const fallbackText =
-      "Thanks for the message — I want to make sure you get the right answer, so I'm checking with your host and they'll get back to you shortly.";
+      "Good question — I've flagged this directly for your host. They've been notified and will message you here shortly.";
     await db.insert(messages).values({
       orgId: reservation.orgId,
       conversationId,
@@ -378,7 +378,7 @@ export async function POST(
 
       if (escalation && !full.trim()) {
         // model escalated without text — the guest still gets a kind reply
-        full = "Let me check with your host and get right back to you on that.";
+        full = "I've flagged this for your host — they've been notified and will get back to you here shortly.";
         controller.enqueue(encoder.encode(full));
       }
 

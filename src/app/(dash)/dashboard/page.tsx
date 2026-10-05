@@ -122,7 +122,7 @@ export default async function DashboardPage() {
         </h1>
         <p className="mt-0.5 text-callout text-ink-2">
           {allGood
-            ? "Everything looks good."
+            ? "All quiet — guests are settled, nothing needs you."
             : `${escalationCount} thing${escalationCount > 1 ? "s" : ""} need${escalationCount > 1 ? "" : "s"} you.`}
         </p>
       </div>

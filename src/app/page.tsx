@@ -84,7 +84,7 @@ export default async function LandingPage() {
             <span className="block text-ink-3">Available 24/7.</span>
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-[19px] leading-relaxed text-ink-2">
-            Instant answers for guests. Fewer interruptions for you.
+            Never answer "What's the WiFi password?" at 3:00 AM again.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link href="/pricing" className="btn btn-primary btn-lg w-full sm:w-auto">
@@ -190,7 +190,7 @@ export default async function LandingPage() {
                 }
               >
                 <div className="flex items-center justify-between">
-                  <span className={`text-callout font-medium ${p.featured ? "text-[#6db2ff]" : "text-accent"}`}>
+                  <span className={`text-callout font-medium ${p.featured ? "text-[#C9A87C]" : "text-accent"}`}>
                     {p.name}
                   </span>
                   {p.featured && (
@@ -210,7 +210,7 @@ export default async function LandingPage() {
                       <Icon
                         name="check"
                         size={14}
-                        className={p.featured ? "text-[#6db2ff]" : "text-accent"}
+                        className={p.featured ? "text-[#C9A87C]" : "text-accent"}
                       />
                       {f}
                     </li>
