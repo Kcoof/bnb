@@ -82,7 +82,10 @@ export async function sendOtpAction(input: {
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: { shouldCreateUser: true },
+    options: {
+      shouldCreateUser: true,
+      emailRedirectTo: `${process.env.APP_URL ?? "https://bnb-luxuryprep.vercel.app"}/auth/callback`,
+    },
   });
   if (error) return { error: error.message };
   return { sent: true };
