@@ -39,8 +39,6 @@ export default async function DashboardPage() {
     openTaskRow,
     propRows,
     convCountRow,
-    escalatedConvRows,
-    aiConvRows,
   ] = await Promise.all([
     db
       .select({ r: reservations, p: properties })

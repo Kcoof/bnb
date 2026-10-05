@@ -4,7 +4,6 @@ import { db } from "@/lib/db";
 import {
   conversations,
   escalations,
-  messages,
   properties,
   reservations,
 } from "@/lib/db/schema";
