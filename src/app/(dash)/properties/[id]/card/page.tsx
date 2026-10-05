@@ -54,11 +54,9 @@ export default async function PropertyCardPage({
         <div className="mt-6 text-[11px] font-medium uppercase tracking-[0.25em] text-[#6e6e73]">
           Your stay assistant
         </div>
-        <h1 className="mt-2 text-[28px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">Need anything?</h1>
+        <h1 className="mt-2 text-[28px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">Everything you need for your stay.</h1>
         <p className="mt-1.5 text-[15px] leading-snug text-[#6e6e73]">
-          Scan to chat with your
-          <br />
-          24/7 concierge
+          Scan for your private 24/7 concierge —&#10;Wi-Fi, check-in, local picks, help
         </p>
 
         <div className="mx-auto mt-6 w-fit rounded-[16px] border border-[#d2d2d7] bg-white p-4">

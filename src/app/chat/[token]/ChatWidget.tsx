@@ -139,7 +139,7 @@ export function ChatWidget(props: {
             </div>
             <div className="flex items-center gap-1.5 text-caption-1 text-success">
               <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />
-              online 24/7
+              answering from your host’s house ledger
             </div>
           </div>
         </div>
@@ -206,6 +206,14 @@ export function ChatWidget(props: {
               </div>
             );
           })}
+          {(() => {
+            const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
+            return lastAssistant && !lastAssistant.content.includes("flagged this") ? (
+              <p className="pt-1 text-center text-[11px] text-[#9E9A93]">
+                Answered from the host&rsquo;s house manual
+              </p>
+            ) : null;
+          })()}
           <div ref={bottomRef} />
         </div>
       </div>
@@ -236,7 +244,7 @@ export function ChatWidget(props: {
                 }
               }}
               rows={1}
-              placeholder="Type your question…"
+              placeholder={`Ask anything about your stay at ${props.propertyName}…`}
               maxLength={2000}
               className="max-h-32 min-h-10 flex-1 resize-none [field-sizing:content] bg-transparent text-[16px] leading-6 outline-none placeholder:text-ink-3"
             />

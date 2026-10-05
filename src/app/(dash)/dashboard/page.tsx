@@ -114,6 +114,16 @@ export default async function DashboardPage() {
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const allGood = openEscalations.length === 0;
 
+  // Gemini 4.2/4.5: gracious, context-aware sub-line
+  const subLine = allGood
+    ? arrivals.length + departures.length > 0
+      ? (arrivals.length > 0 ? arrivals.length + " arrival" + (arrivals.length > 1 ? "s" : "") + " today" : "") +
+        (arrivals.length > 0 && departures.length > 0 ? " · " : "") +
+        (departures.length > 0 ? departures.length + " departure" + (departures.length > 1 ? "s" : "") + " today" : "") +
+        ". Your concierges are handling everything else."
+      : "All residences are running without friction. No host action required."
+    : openEscalations.length + " conversation" + (openEscalations.length > 1 ? "s" : "") + " await your decision.";
+
   return (
     <div className="space-y-8">
       <div className="animate-fade-up">
@@ -121,9 +131,7 @@ export default async function DashboardPage() {
           {greeting}, {firstName}.
         </h1>
         <p className="mt-0.5 text-callout text-ink-2">
-          {allGood
-            ? "All quiet — guests are settled, nothing needs you."
-            : `${escalationCount} thing${escalationCount > 1 ? "s" : ""} need${escalationCount > 1 ? "" : "s"} you.`}
+          {subLine}
         </p>
       </div>
 

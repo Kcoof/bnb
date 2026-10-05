@@ -62,7 +62,7 @@ export default function LoginPage() {
         </div>
         <h1 className="mt-5 text-center text-title-1">Sign in to AUTOMI</h1>
         <p className="mt-1.5 text-center text-callout text-ink-2">
-          No passwords — Google or a one-time code.
+          Welcome back to your residences.
         </p>
 
         {mode === "start" && (
