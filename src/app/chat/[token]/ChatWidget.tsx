@@ -148,11 +148,6 @@ export function ChatWidget(props: {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4">
         <div className="mx-auto max-w-[640px] space-y-2">
-          <div className="mx-auto mb-4 max-w-md rounded-lg bg-surface-2 p-5 text-center text-callout text-ink-2">
-            Hi {props.guestFirst}! Ask me anything about your stay — wifi, parking,
-            check-in, checkout, the neighborhood.
-          </div>
-
           {!loaded && (
             <>
               <div className="skeleton h-10 w-2/3 rounded-[22px]" />
