@@ -4,72 +4,116 @@ import { db } from "@/lib/db";
 import {
   conversations,
   escalations,
+  messages,
   properties,
   reservations,
+  tasks,
 } from "@/lib/db/schema";
 import { requireOrgMember } from "@/lib/auth";
-import { localDateStr } from "@/lib/time";
+import { localDateStr, fmtLocal } from "@/lib/time";
 import { Icon } from "@/components/Icon";
-import { fmtLocal } from "@/lib/time";
 
 // AUTOMI v2 Today (spec §3): answers "do I need to do anything?" first.
+// Query plan: 1 round for the org timezone (derives "today"), then every
+// other read in ONE parallel batch — ~2 DB round trips total.
 export default async function DashboardPage() {
   const member = await requireOrgMember();
   if (!member) return null;
   const orgId = member.profile.orgId;
 
-  const orgProps = await db
-    .select()
+  const tzRows = await db
+    .select({ tz: properties.timezone })
     .from(properties)
     .where(eq(properties.orgId, orgId));
-  const timezones = [...new Set(orgProps.map((p) => p.timezone))];
-  const today = localDateStr(timezones[0] ?? "UTC");
-
-  const openEscalations = await db
-    .select()
-    .from(escalations)
-    .where(and(eq(escalations.orgId, orgId), eq(escalations.status, "open")))
-    .orderBy(sql`created_at desc`)
-    .limit(5);
+  const tz = tzRows[0]?.tz ?? "UTC";
+  const today = localDateStr(tz);
 
   const monthStart = new Date();
   monthStart.setUTCDate(1);
-  const [convCount] = await db
-    .select({ n: sql<number>`count(*)::int` })
-    .from(conversations)
-    .where(
-      and(eq(conversations.orgId, orgId), gte(conversations.createdAt, monthStart)),
-    );
 
-  const arrivals = await db
-    .select({ r: reservations, p: properties })
-    .from(reservations)
-    .innerJoin(properties, eq(reservations.propertyId, properties.id))
-    .where(
-      and(
-        eq(reservations.orgId, orgId),
-        eq(reservations.checkIn, today),
-        eq(reservations.isHold, false),
-        eq(reservations.isConcierge, false),
+  const [
+    arrivals,
+    departures,
+    openEscalations,
+    escalationCountRow,
+    openTaskRow,
+    propRows,
+    convCountRow,
+    escalatedConvRows,
+    aiConvRows,
+  ] = await Promise.all([
+    db
+      .select({ r: reservations, p: properties })
+      .from(reservations)
+      .innerJoin(properties, eq(reservations.propertyId, properties.id))
+      .where(
+        and(
+          eq(reservations.orgId, orgId),
+          eq(reservations.checkIn, today),
+          eq(reservations.isHold, false),
+          eq(reservations.isConcierge, false),
+        ),
       ),
-    );
-  const departures = await db
-    .select({ r: reservations, p: properties })
-    .from(reservations)
-    .innerJoin(properties, eq(reservations.propertyId, properties.id))
-    .where(
-      and(
-        eq(reservations.orgId, orgId),
-        eq(reservations.checkOut, today),
-        eq(reservations.isHold, false),
-        eq(reservations.isConcierge, false),
+    db
+      .select({ r: reservations, p: properties })
+      .from(reservations)
+      .innerJoin(properties, eq(reservations.propertyId, properties.id))
+      .where(
+        and(
+          eq(reservations.orgId, orgId),
+          eq(reservations.checkOut, today),
+          eq(reservations.isHold, false),
+          eq(reservations.isConcierge, false),
+        ),
       ),
-    );
+    db
+      .select()
+      .from(escalations)
+      .where(and(eq(escalations.orgId, orgId), eq(escalations.status, "open")))
+      .orderBy(sql`created_at desc`)
+      .limit(5),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(escalations)
+      .where(and(eq(escalations.orgId, orgId), eq(escalations.status, "open"))),
+    db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(tasks)
+      .where(
+        and(
+          eq(tasks.orgId, orgId),
+          sql`${tasks.status} in ('pending','in_progress')`,
+        ),
+      ),
+    db.select().from(properties).where(eq(properties.orgId, orgId)),
+    db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(conversations)
+      .where(
+        and(eq(conversations.orgId, orgId), gte(conversations.createdAt, monthStart)),
+      ),
+    db
+      .select({ conversationId: escalations.conversationId })
+      .from(escalations)
+      .where(eq(escalations.orgId, orgId)),
+    db
+      .select({ id: conversations.id })
+      .from(conversations)
+      .innerJoin(
+        messages,
+        sql`${messages.conversationId} = ${conversations.id} and ${messages.role} = 'guest'`,
+      )
+      .where(eq(conversations.orgId, orgId))
+      .groupBy(conversations.id),
+  ]);
+
+  const openTaskCount = openTaskRow[0]?.n ?? 0;
+  const escalationCount = escalationCountRow[0]?.count ?? 0;
+  const convCount = convCountRow[0]?.n ?? 0;
 
   const firstName = member.profile.fullName.split(" ")[0] || "there";
-  const hour = parseInt(fmtLocal(new Date(), timezones[0] ?? "UTC").slice(11, 13), 10);
+  const hour = parseInt(fmtLocal(new Date(), tz).slice(11, 13), 10);
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-
   const allGood = openEscalations.length === 0;
 
   return (
@@ -79,11 +123,12 @@ export default async function DashboardPage() {
           {greeting}, {firstName}.
         </h1>
         <p className="mt-0.5 text-callout text-ink-2">
-          {allGood ? "Everything looks good." : `${openEscalations.length} thing${openEscalations.length > 1 ? "s" : ""} need${openEscalations.length > 1 ? "" : "s"} you.`}
+          {allGood
+            ? "Everything looks good."
+            : `${escalationCount} thing${escalationCount > 1 ? "s" : ""} need${escalationCount > 1 ? "" : "s"} you.`}
         </p>
       </div>
 
-      {/* Needs your attention */}
       {!allGood && (
         <div className="space-y-3">
           {openEscalations.map((e) => (
@@ -113,10 +158,9 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* Property cards */}
       <section>
         <h2 className="mb-3 text-title-3">Your properties</h2>
-        {orgProps.length === 0 ? (
+        {propRows.length === 0 ? (
           <div className="flex flex-col items-center rounded-lg border border-hairline bg-surface px-6 py-12 text-center">
             <p className="text-callout text-ink-2">No properties yet.</p>
             <Link href="/onboarding" className="btn btn-primary btn-md mt-5">
@@ -125,7 +169,7 @@ export default async function DashboardPage() {
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
-            {orgProps.map((p) => (
+            {propRows.map((p) => (
               <Link
                 key={p.id}
                 href={`/properties/${p.id}`}
@@ -145,7 +189,6 @@ export default async function DashboardPage() {
         )}
       </section>
 
-      {/* Today's stats */}
       <section className="grid grid-cols-3 gap-4">
         <div className="card p-5">
           <div className="text-[32px] font-semibold tabular-nums tracking-[-0.02em] text-ink">
@@ -161,11 +204,17 @@ export default async function DashboardPage() {
         </div>
         <div className="card p-5">
           <div className="text-[32px] font-semibold tabular-nums tracking-[-0.02em] text-ink">
-            {convCount?.n ?? 0}
+            {convCount}
           </div>
           <div className="mt-1 text-footnote text-ink-2">conversations this month</div>
         </div>
       </section>
+
+      {openTaskCount > 0 && (
+        <p className="text-footnote text-ink-2">
+          {openTaskCount} cleaning task{openTaskCount > 1 ? "s" : ""} open.
+        </p>
+      )}
     </div>
   );
 }

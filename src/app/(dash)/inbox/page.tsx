@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   conversations,
@@ -25,36 +25,39 @@ export default async function InboxPage({
     ? (rawTab as (typeof TABS)[number])
     : "all";
 
-  const rows = await db
-    .select({
-      c: conversations,
-      r: reservations,
-      p: properties,
-    })
-    .from(conversations)
-    .innerJoin(reservations, eq(conversations.reservationId, reservations.id))
-    .innerJoin(properties, eq(reservations.propertyId, properties.id))
-    .where(eq(conversations.orgId, member.profile.orgId))
-    .orderBy(desc(conversations.lastMessageAt))
-    .limit(100);
-
-  const openEscs = await db
-    .select({ conversationId: escalations.conversationId })
-    .from(escalations)
-    .where(and(eq(escalations.orgId, member.profile.orgId), eq(escalations.status, "open")));
+  const [rows, openEscs] = await Promise.all([
+    db
+      .select({
+        c: conversations,
+        r: reservations,
+        p: properties,
+      })
+      .from(conversations)
+      .innerJoin(reservations, eq(conversations.reservationId, reservations.id))
+      .innerJoin(properties, eq(reservations.propertyId, properties.id))
+      .where(eq(conversations.orgId, member.profile.orgId))
+      .orderBy(desc(conversations.lastMessageAt))
+      .limit(100),
+    db
+      .select({ conversationId: escalations.conversationId })
+      .from(escalations)
+      .where(and(eq(escalations.orgId, member.profile.orgId), eq(escalations.status, "open"))),
+  ]);
   const escalatedIds = new Set(openEscs.map((e) => e.conversationId));
 
+  // last message per conversation in ONE query (window fn) — no N+1 loop
+  const convIds = rows.map(({ c }) => c.id);
   const lastMessages = new Map<string, { role: string; content: string }>();
-  for (const row of rows) {
-    const last = (
-      await db
-        .select({ role: messages.role, content: messages.content })
-        .from(messages)
-        .where(eq(messages.conversationId, row.c.id))
-        .orderBy(desc(messages.createdAt))
-        .limit(1)
-    )[0];
-    if (last) lastMessages.set(row.c.id, last);
+  if (convIds.length > 0) {
+    const lastRows = await db.execute(sql`
+      select distinct on (conversation_id) conversation_id, role, content
+      from messages
+      where conversation_id in ${sql.raw(`(${convIds.map((id) => `'${id}'`).join(",")})`)}
+      order by conversation_id, created_at desc
+    `);
+    for (const row of lastRows as unknown as { conversation_id: string; role: string; content: string }[]) {
+      lastMessages.set(row.conversation_id, { role: row.role, content: row.content });
+    }
   }
 
   const filtered = rows.filter(({ c }) => {

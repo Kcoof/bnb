@@ -16,7 +16,7 @@ export default async function ReservationsPage({
   if (!member) return null;
   const { property: propertyFilter, status: statusFilter } = await searchParams;
 
-  const props = await db
+  const propsPromise = db
     .select()
     .from(properties)
     .where(eq(properties.orgId, member.profile.orgId));
@@ -27,13 +27,16 @@ export default async function ReservationsPage({
   // hide the synthetic always-on stay behind the property QR
   conditions.push(eq(reservations.isConcierge, false));
 
-  const rows = await db
-    .select({ r: reservations, p: properties })
+  const [props, rows] = await Promise.all([
+    propsPromise,
+    db
+      .select({ r: reservations, p: properties })
     .from(reservations)
     .innerJoin(properties, eq(reservations.propertyId, properties.id))
     .where(and(...conditions))
-    .orderBy(desc(reservations.checkIn))
-    .limit(200);
+      .orderBy(desc(reservations.checkIn))
+      .limit(200),
+  ]);
 
   const chip = (active: boolean) =>
     `h-8 shrink-0 rounded-full px-3.5 text-[13px] font-medium inline-flex items-center transition duration-150 active:scale-[0.96] ${

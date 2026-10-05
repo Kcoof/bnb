@@ -14,17 +14,16 @@ export default async function TasksPage() {
   const member = await requireOrgMember();
   if (!member) return null;
 
-  const [props, cleanerList] = await Promise.all([
+  const [props, cleanerList, rows] = await Promise.all([
     db.select().from(properties).where(eq(properties.orgId, member.profile.orgId)),
     db.select().from(cleaners).where(eq(cleaners.orgId, member.profile.orgId)),
+    db
+      .select({ t: tasks, p: properties })
+      .from(tasks)
+      .innerJoin(properties, eq(tasks.propertyId, properties.id))
+      .where(eq(tasks.orgId, member.profile.orgId))
+      .orderBy(tasks.dueAt),
   ]);
-
-  const rows = await db
-    .select({ t: tasks, p: properties })
-    .from(tasks)
-    .innerJoin(properties, eq(tasks.propertyId, properties.id))
-    .where(eq(tasks.orgId, member.profile.orgId))
-    .orderBy(tasks.dueAt);
 
   const open = rows.filter(({ t }) => t.status === "pending" || t.status === "in_progress");
   const closed = rows
