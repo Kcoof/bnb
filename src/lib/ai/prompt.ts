@@ -2,10 +2,8 @@ import "server-only";
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
-  conversations,
   customFaqs,
   messages,
-  organizations,
   properties,
   propertyAppliances,
   propertyKnowledge,
@@ -44,79 +42,76 @@ function kbSection(kb: Kb): string {
   return lines.join("\n");
 }
 
-export async function buildSystemPrompt(reservationId: string): Promise<{
-  system: string;
+// PERF-PLAN §1.4 M2: the chat route passes the phase-1 context (already
+// fetched by loadGuestChatContext) so this builder runs ZERO extra context
+// queries — only one parallel read batch (history+host msgs, appliances, faqs).
+function emptyKb() {
+  return {
+    propertyId: "",
+    wifiNetwork: "", wifiPassword: "", doorCode: "",
+    checkinInstructions: "", checkoutInstructions: "",
+    parking: "", houseRules: "", appliances: "", emergencyInfo: "",
+    nearby: "", lateCheckoutPolicy: "", cleaningNotes: "",
+    extras: [] as unknown[], updatedAt: new Date(),
+  };
+}
+
+export async function buildSystemPrompt(ctx: {
+  reservation: typeof reservations.$inferSelect;
+  property: typeof properties.$inferSelect;
+  kb: typeof propertyKnowledge.$inferSelect | null;
   conversationId: string | null;
+}): Promise<{
+  system: string;
   history: { role: "guest" | "assistant" | "host"; content: string }[];
   meta: { orgId: string; model: string; propertyId: string; lat: number | null; lng: number | null };
 }> {
-  const rows = await db
-    .select({
-      reservation: reservations,
-      property: properties,
-      kb: propertyKnowledge,
-      org: organizations,
-    })
-    .from(reservations)
-    .innerJoin(properties, eq(reservations.propertyId, properties.id))
-    .innerJoin(propertyKnowledge, eq(propertyKnowledge.propertyId, properties.id))
-    .innerJoin(organizations, eq(reservations.orgId, organizations.id))
-    .where(eq(reservations.id, reservationId))
-    .limit(1);
-  const r = rows[0];
-  if (!r) throw new Error("reservation not found");
+  const { reservation: resv, property: prop } = ctx;
+  const kb = ctx.kb ?? emptyKb();
+  const conversationId = ctx.conversationId;
 
-  const convRow = (
-    await db
-      .select({ id: conversations.id })
-      .from(conversations)
-      .where(eq(conversations.reservationId, reservationId))
-      .limit(1)
-  )[0];
-  const conversationId = convRow?.id ?? null;
+  const [historyRows, hostRows, appliances, faqs] = await Promise.all([
+    conversationId
+      ? db
+          .select({ role: messages.role, content: messages.content, createdAt: messages.createdAt })
+          .from(messages)
+          .where(eq(messages.conversationId, conversationId))
+          .orderBy(desc(messages.createdAt))
+          .limit(20)
+      : Promise.resolve([]),
+    conversationId
+      ? db
+          .select({ content: messages.content, createdAt: messages.createdAt })
+          .from(messages)
+          .where(and(eq(messages.conversationId, conversationId), eq(messages.role, "host")))
+          .orderBy(desc(messages.createdAt))
+          .limit(5)
+      : Promise.resolve([]),
+    db
+      .select({
+        label: propertyAppliances.label,
+        instructions: propertyAppliances.instructions,
+        troubleshooting: propertyAppliances.troubleshooting,
+      })
+      .from(propertyAppliances)
+      .where(eq(propertyAppliances.propertyId, prop.id)),
+    db
+      .select({ question: customFaqs.question, answer: customFaqs.answer })
+      .from(customFaqs)
+      .where(eq(customFaqs.propertyId, prop.id)),
+  ]);
 
   const history: { role: "guest" | "assistant" | "host"; content: string }[] = [];
-  let recentHost: string[] = [];
-  if (conversationId) {
-    const all = await db
-      .select({ role: messages.role, content: messages.content })
-      .from(messages)
-      .where(eq(messages.conversationId, conversationId))
-      .orderBy(desc(messages.createdAt))
-      .limit(20);
-    for (const m of all.reverse()) {
-      if (m.role === "guest" || m.role === "assistant" || m.role === "host") {
-        history.push({ role: m.role, content: m.content });
-      }
+  for (const m of [...historyRows].reverse()) {
+    if (m.role === "guest" || m.role === "assistant" || m.role === "host") {
+      history.push({ role: m.role, content: m.content });
     }
-    const hostMsgs = await db
-      .select({ content: messages.content })
-      .from(messages)
-      .where(and(eq(messages.conversationId, conversationId), eq(messages.role, "host")))
-      .orderBy(desc(messages.createdAt))
-      .limit(5);
-    recentHost = hostMsgs.reverse().map((h) => `- ${h.content}`);
   }
+  const recentHost = [...hostRows].reverse().map((h) => `- ${h.content}`);
 
-  const appliances = await db
-    .select({
-      label: propertyAppliances.label,
-      instructions: propertyAppliances.instructions,
-      troubleshooting: propertyAppliances.troubleshooting,
-    })
-    .from(propertyAppliances)
-    .where(eq(propertyAppliances.propertyId, r.property.id));
-
-  const faqs = await db
-    .select({ question: customFaqs.question, answer: customFaqs.answer })
-    .from(customFaqs)
-    .where(eq(customFaqs.propertyId, r.property.id));
-
-  const amenities = Array.isArray(r.property.amenities)
-    ? (r.property.amenities as string[]).join(", ")
+  const amenities = Array.isArray(prop.amenities)
+    ? (prop.amenities as string[]).join(", ")
     : "";
-
-  const { reservation: resv, property: prop, kb } = r;
   const city = prop.address.split("\n")[0]?.split(",")[0]?.trim() || prop.address || "the area";
   const nowLocal = fmtLocal(new Date(), prop.timezone);
 
@@ -183,7 +178,6 @@ ${recentHost.length ? recentHost.join("\n") : "(none yet)"}`;
 
   return {
     system,
-    conversationId,
     history,
     meta: {
       orgId: resv.orgId,

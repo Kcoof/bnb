@@ -15,7 +15,20 @@ export default async function GuestChatPage({
 }) {
   const { token } = await params;
   const ctx = await loadGuestChatContext(token);
-  if (!ctx || !ctx.chatEnabled) notFound();
+  if (!ctx) notFound();
+  if (!ctx.chatEnabled) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-canvas px-6">
+        <div className="max-w-sm text-center">
+          <h1 className="text-title-2">Concierge is briefly unavailable</h1>
+          <p className="mt-2 text-callout text-ink-2">
+            The host has been notified. If you need urgent help, please contact
+            them through your booking app.
+          </p>
+        </div>
+      </main>
+    );
+  }
   
   const { reservation, property } = ctx;
   const guestFirst = (reservation.guestName ?? "").split(" ")[0];

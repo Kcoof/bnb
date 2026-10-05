@@ -3,10 +3,9 @@
 import { and, eq } from "drizzle-orm";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import { db } from "@/lib/db";
-import { properties, propertyKnowledge, reservations } from "@/lib/db/schema";
+import { properties, propertyKnowledge } from "@/lib/db/schema";
 import { requireOrgMember } from "@/lib/auth";
 import { aiClient, aiModel, escalateTool } from "@/lib/ai/client";
-import { buildSystemPrompt } from "@/lib/ai/prompt";
 
 // "Test AI question" — runs a guest-style question through the exact prompt
 // the guest chat uses, against a synthetic current reservation. Nothing is
@@ -30,27 +29,15 @@ export async function testQuestionAction(
   )[0];
   if (!prop) return { error: "property not found" };
 
-  // find any reservation of this property to satisfy the prompt builder;
-  // if none exists, create the prompt directly from property data
-  const anyResv = (
+  const kb = (
     await db
-      .select({ id: reservations.id })
-      .from(reservations)
-      .where(eq(reservations.propertyId, propertyId))
+      .select()
+      .from(propertyKnowledge)
+      .where(eq(propertyKnowledge.propertyId, propertyId))
       .limit(1)
   )[0];
-
   let system: string;
-  if (anyResv) {
-    system = (await buildSystemPrompt(anyResv.id)).system;
-  } else {
-    const kb = (
-      await db
-        .select()
-        .from(propertyKnowledge)
-        .where(eq(propertyKnowledge.propertyId, propertyId))
-        .limit(1)
-    )[0];
+  {
     const today = new Date().toISOString().slice(0, 10);
     system = `You are ${prop.assistantName}, the virtual assistant for guests staying at
 ${prop.name}. You are talking to the guest, staying from ${today} to ${today}.

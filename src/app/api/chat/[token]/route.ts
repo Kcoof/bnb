@@ -121,7 +121,7 @@ export async function POST(
       })
       .returning({ id: escalations.id });
     if (esc[0]) {
-      await sendEvent("escalation/created", { escalationId: esc[0].id },);
+      after(() => sendEvent("escalation/created", { escalationId: esc[0].id }));
     }
     return new Response(fallbackText, {
       headers: {
@@ -132,7 +132,7 @@ export async function POST(
     });
   }
 
-  const { system, history, meta } = await buildSystemPrompt(reservation.id);
+  const { system, history, meta } = await buildSystemPrompt(ctx);
   const flagged = prefilterHit(guestMessage);
 
   // ── Emergency fast-path (Automi spec): fire/gas/medical/security keywords
@@ -182,7 +182,7 @@ export async function POST(
       })
       .returning({ id: escalations.id });
     if (insertedEsc[0]) {
-      await sendEvent("escalation/created", { escalationId: insertedEsc[0].id },);
+      after(() => sendEvent("escalation/created", { escalationId: insertedEsc[0].id }));
     }
 
     return new Response(emergencyText, {
@@ -374,23 +374,6 @@ export async function POST(
       ]);
       if (escId) {
         after(() => sendEvent("escalation/created", { escalationId: escId! }));
-      }
-
-      if (escalation) {
-        const inserted = await db
-          .insert(escalations)
-          .values({
-            orgId: reservation.orgId,
-            source: "chat",
-            conversationId,
-            reason: escalation.reason,
-            summary: escalation.summary,
-            urgency: escalation.urgency,
-          })
-          .returning({ id: escalations.id });
-        if (inserted[0]) {
-          await sendEvent("escalation/created", { escalationId: inserted[0].id },);
-        }
       }
 
       controller.close();
