@@ -11,7 +11,7 @@ import {
 } from "@/lib/db/schema";
 import { loadGuestChatContext } from "@/lib/tokens";
 import { buildSystemPrompt, prefilterHit } from "@/lib/ai/prompt";
-import { aiClient, aiModel, escalateTool, nearbyTool } from "@/lib/ai/client";
+import { aiClient, aiKey, aiModel, escalateTool, nearbyTool } from "@/lib/ai/client";
 import { sendEvent } from "@/lib/inngest/client";
 import { searchNearby } from "@/lib/places";
 import { after } from "next/server";
@@ -99,7 +99,7 @@ export async function POST(
   // ── AI-not-configured guard: fail fast and honestly instead of burning
   // the guest's time on a doomed model call. Escalate so the host still
   // gets the message (spec: graceful degradation of unconfigured envs).
-  if (!process.env.AI_API_KEY) {
+  if (!aiKey()) {
     const fallbackText =
       "Thanks for the message — I want to make sure you get the right answer, so I'm checking with your host and they'll get back to you shortly.";
     await db.insert(messages).values({

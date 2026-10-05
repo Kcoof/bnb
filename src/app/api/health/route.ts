@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { supabasePublicKey } from "@/lib/supabase/keys";
+import { aiKey } from "@/lib/ai/client";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +25,7 @@ export async function GET() {
     ),
     DATABASE_URL: Boolean(process.env.DATABASE_URL),
     DATABASE_URL_HOST: dbHost,
-    AI_API_KEY: Boolean(process.env.AI_API_KEY),
+    AI_API_KEY: Boolean(aiKey()),
     RESEND_API_KEY: Boolean(process.env.RESEND_API_KEY),
     INNGEST_SIGNING_KEY: Boolean(process.env.INNGEST_SIGNING_KEY),
   };

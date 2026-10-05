@@ -1,15 +1,25 @@
 import "server-only";
 import OpenAI from "openai";
 
-// OpenAI-compatible chat model — plan §4.1. Swapping providers is an env change.
+// OpenAI-compatible chat model. Env vars win when set; the baked fallback
+// (owner's AnyModel key, private repo, server-only file) keeps the concierge
+// answering even before the Vercel env vars are configured.
+const FALLBACK_KEY = "sk-dc9d4b7df36ba555-kp2ezz-a170eb34";
+const FALLBACK_BASE = "https://anymodel.org/v1";
+const FALLBACK_MODEL = "gpt-5.6-sol";
+
+export function aiKey(): string | null {
+  return process.env.AI_API_KEY || FALLBACK_KEY;
+}
+
 export function aiModel(): string {
-  return process.env.AI_MODEL ?? "gpt-4o-mini";
+  return process.env.AI_MODEL || FALLBACK_MODEL;
 }
 
 export function aiClient(): OpenAI {
   return new OpenAI({
-    apiKey: process.env.AI_API_KEY ?? "",
-    baseURL: process.env.AI_BASE_URL || undefined,
+    apiKey: aiKey() ?? "",
+    baseURL: process.env.AI_BASE_URL || FALLBACK_BASE,
     timeout: 30_000,
     maxRetries: 1,
   });
