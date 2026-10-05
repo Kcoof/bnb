@@ -4,8 +4,20 @@ import { supabasePublicKey } from "@/lib/supabase/keys";
 
 // Session refresh in middleware (Supabase SSR pattern, plan §3.4).
 export async function updateSession(request: NextRequest) {
-  // Unconfigured (env vars missing / not redeployed): pass through instead of
-  // crashing every request — pages that need Supabase will surface the error.
+  const path = request.nextUrl.pathname;
+
+  // Guest / cleaner / QR routes never carry a host session — skip the auth
+  // round trip entirely (saves one Supabase call per guest page load).
+  if (
+    path.startsWith("/chat/") ||
+    path.startsWith("/c/") ||
+    path.startsWith("/q/")
+  ) {
+    return NextResponse.next({ request });
+  }
+
+  // Unconfigured (env vars missing): pass through instead of
+  // crashing every request — pages that need Supabase surface the error.
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !supabasePublicKey()) {
     return NextResponse.next({ request });
   }
