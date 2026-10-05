@@ -117,6 +117,45 @@ export async function POST(
     })
     .where(eq(conversations.id, conversationId));
 
+  // ── AI-not-configured guard: fail fast and honestly instead of burning
+  // the guest's time on a doomed model call. Escalate so the host still
+  // gets the message (spec: graceful degradation of unconfigured envs).
+  if (!process.env.AI_API_KEY) {
+    const fallbackText =
+      "Thanks for the message — I want to make sure you get the right answer, so I'm checking with your host and they'll get back to you shortly.";
+    await db.insert(messages).values({
+      orgId: reservation.orgId,
+      conversationId,
+      role: "assistant",
+      content: fallbackText,
+      model: "unconfigured",
+    });
+    const esc = await db
+      .insert(escalations)
+      .values({
+        orgId: reservation.orgId,
+        source: "chat",
+        conversationId,
+        reason: "out_of_kb",
+        summary: guestMessage.slice(0, 200),
+        urgency: "normal",
+      })
+      .returning({ id: escalations.id });
+    if (esc[0]) {
+      await inngest.send({
+        name: "escalation/created",
+        data: { escalationId: esc[0].id },
+      });
+    }
+    return new Response(fallbackText, {
+      headers: {
+        "content-type": "text/plain; charset=utf-8",
+        "cache-control": "no-store",
+        "x-robots-tag": "noindex",
+      },
+    });
+  }
+
   const { system, history, meta } = await buildSystemPrompt(reservation.id);
   const flagged = prefilterHit(guestMessage);
 
