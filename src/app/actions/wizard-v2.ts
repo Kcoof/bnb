@@ -171,7 +171,7 @@ export async function wizardSavePhoneAction(phone: string): Promise<{ error?: st
   return {};
 }
 
-/** Amenities chips (spec §2 step 8). */
+/** Amenities (wizard steps 8–10: standout, included, safety — Airbnb-style). */
 export async function wizardSaveAmenitiesAction(
   propertyId: string,
   amenities: string[],
@@ -182,7 +182,7 @@ export async function wizardSaveAmenitiesAction(
   if (!owned) return { error: "not found" };
   await db
     .update(properties)
-    .set({ amenities: amenities.slice(0, 30) })
+    .set({ amenities: amenities.slice(0, 60) })
     .where(eq(properties.id, propertyId));
   return {};
 }

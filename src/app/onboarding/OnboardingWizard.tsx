@@ -11,9 +11,62 @@ import {
   wizardSaveAppliancesAction,
 } from "@/app/actions/wizard-v2";
 
-const AMENITIES = [
-  "Kitchen", "Washing machine", "Air conditioning", "Hot water",
-  "Parking", "Extra towels", "Balcony", "Wifi", "Heating", "Elevator",
+// Airbnb-style listing onboarding: standout amenities → included
+// amenities (grouped) → safety features. All three write to the same
+// properties.amenities array that feeds the concierge prompt.
+const STANDOUT_AMENITIES = [
+  "Pool", "Hot tub", "Patio", "BBQ grill", "Outdoor dining area",
+  "Fire pit", "Pool table", "Indoor fireplace", "Outdoor shower",
+];
+
+type Amenity = { label: string; sub?: string; value?: string };
+
+const AMENITY_GROUPS: { label: string; items: Amenity[] }[] = [
+  {
+    label: "Popular",
+    items: [
+      { label: "Wifi" },
+      { label: "Kitchen", sub: "Space where guests can cook their own meals" },
+      { label: "TV" },
+      { label: "Washer" },
+      { label: "Dryer" },
+      { label: "Air conditioning" },
+      { label: "Heating" },
+      { label: "Hot water" },
+      { label: "Free parking on premises" },
+      { label: "Dedicated workspace", sub: "A desk or table with room for a laptop" },
+      { label: "Hair dryer" },
+      { label: "Iron" },
+    ],
+  },
+  {
+    label: "Bed and bath",
+    items: [
+      {
+        label: "Essentials",
+        sub: "Towels, bed sheets, soap, and toilet paper",
+        value: "Essentials (towels, bed sheets, soap, and toilet paper)",
+      },
+      { label: "Bed linens" },
+      { label: "Extra pillows and blankets" },
+      { label: "Hangers" },
+      { label: "Room-darkening shades" },
+    ],
+  },
+  {
+    label: "Building and access",
+    items: [
+      { label: "Elevator" },
+      { label: "Self check-in", sub: "Lockbox, smart lock, or keypad", value: "Self check-in (lockbox, smart lock, or keypad)" },
+    ],
+  },
+];
+
+const SAFETY_FEATURES: Amenity[] = [
+  { label: "Smoke alarm" },
+  { label: "Carbon monoxide alarm" },
+  { label: "Fire extinguisher" },
+  { label: "First aid kit" },
 ];
 
 // AUTOMI onboarding (spec §2): one question per screen, autosave, dots.
@@ -39,7 +92,7 @@ export function OnboardingWizard(props: {
   const [error, setError] = useState<string | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const STEPS = 10;
+  const STEPS = 12;
 
   function flashSaved() {
     setSaved(true);
@@ -53,6 +106,17 @@ export function OnboardingWizard(props: {
       const result = await wizardSaveAction(propertyId, patch);
       if (result?.saved) flashSaved();
     }, 400);
+  }
+
+  async function setAmenity(value: string, on: boolean) {
+    const nextList = on
+      ? Array.from(new Set([...amenities, value]))
+      : amenities.filter((x) => x !== value);
+    setAmenities(nextList);
+    if (propertyId) {
+      await wizardSaveAmenitiesAction(propertyId, nextList);
+      flashSaved();
+    }
   }
 
   async function next() {
@@ -78,7 +142,7 @@ export function OnboardingWizard(props: {
         if (result?.parsedCoords) setCoords("location found");
         else setCoords(null);
       }
-      if (step === 8) {
+      if (step === 10) {
         const r = await wizardSavePhoneAction(phone);
         if (r?.error) {
           setError(r.error);
@@ -94,8 +158,8 @@ export function OnboardingWizard(props: {
 
   const canContinue =
     (step === 1 && name.trim().length > 0) ||
-    (step !== 1 && step !== 8) ||
-    (step === 8 && phone.replace(/\D/g, "").length >= 8);
+    (step !== 1 && step !== 10) ||
+    (step === 10 && phone.replace(/\D/g, "").length >= 8);
 
   const inputCls = "input h-14 text-[19px]";
 
@@ -228,21 +292,12 @@ export function OnboardingWizard(props: {
             </Q>
           )}
           {step === 7 && (
-            <Q title="What else does the place have?" sub="Tap everything that applies.">
+            <Q title="Does your place have any of these standout amenities?" sub="The ones guests remember. Tap everything that applies.">
               <div className="flex flex-wrap gap-2">
-                {AMENITIES.map((a) => (
+                {STANDOUT_AMENITIES.map((a) => (
                   <button
                     key={a}
-                    onClick={async () => {
-                      const nextList = amenities.includes(a)
-                        ? amenities.filter((x) => x !== a)
-                        : [...amenities, a];
-                      setAmenities(nextList);
-                      if (propertyId) {
-                        await wizardSaveAmenitiesAction(propertyId, nextList);
-                        flashSaved();
-                      }
-                    }}
+                    onClick={() => setAmenity(a, !amenities.includes(a))}
                     className={`h-10 rounded-full border px-4 text-[15px] font-medium transition duration-150 active:scale-[0.96] ${amenities.includes(a) ? "border-accent bg-accent text-white" : "border-line bg-surface text-ink hover:border-ink-3"}`}
                   >
                     {a}
@@ -252,6 +307,43 @@ export function OnboardingWizard(props: {
             </Q>
           )}
           {step === 8 && (
+            <Q title="What amenities will you include?" sub="Tick what guests can use — your concierge answers these questions so you don't have to.">
+              <div className="space-y-5">
+                {AMENITY_GROUPS.map((g) => (
+                  <div key={g.label}>
+                    <p className="text-caption-1 uppercase tracking-[0.1em] text-ink-3">
+                      {g.label}
+                    </p>
+                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                      {g.items.map((item) => (
+                        <AmenityRow
+                          key={item.label}
+                          item={item}
+                          checked={amenities.includes(amenityValue(item))}
+                          onToggle={(on) => setAmenity(amenityValue(item), on)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Q>
+          )}
+          {step === 9 && (
+            <Q title="Does your place have any of these safety features?" sub="Some of these may be required by law in your region.">
+              <div className="grid gap-2 sm:grid-cols-2">
+                {SAFETY_FEATURES.map((item) => (
+                  <AmenityRow
+                    key={item.label}
+                    item={item}
+                    checked={amenities.includes(item.label)}
+                    onToggle={(on) => setAmenity(item.label, on)}
+                  />
+                ))}
+              </div>
+            </Q>
+          )}
+          {step === 10 && (
             <Q title="What's your phone number?" sub="When something urgent comes up, we text you here.">
               <input
                 value={phone}
@@ -264,7 +356,7 @@ export function OnboardingWizard(props: {
               />
             </Q>
           )}
-          {step === 9 && propertyId && (
+          {step === 11 && propertyId && (
             <div className="text-center">
               <div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-success-tint text-success animate-pop-in">
                 <Icon name="check" size={36} />
@@ -294,7 +386,7 @@ export function OnboardingWizard(props: {
         )}
 
         {/* nav */}
-        {step < 9 && (
+        {step < 11 && (
           <div className="mt-10 flex items-center justify-between">
             <button
               onClick={() => setStep((s) => Math.max(0, s - 1))}
@@ -309,7 +401,7 @@ export function OnboardingWizard(props: {
               className="btn btn-primary btn-lg"
             >
               {pending && <span className="spinner" />}
-              {step === 0 ? "Let's start" : step === 8 ? "Finish" : "Continue"}
+              {step === 0 ? "Let's start" : step === 10 ? "Finish" : "Continue"}
             </button>
           </div>
         )}
@@ -327,5 +419,34 @@ function Q(props: { title: string; sub?: string; children?: React.ReactNode }) {
       {props.sub && <p className="mt-2 text-callout text-ink-2">{props.sub}</p>}
       {props.children && <div className="mt-7">{props.children}</div>}
     </div>
+  );
+}
+
+function amenityValue(item: Amenity) {
+  return item.value ?? item.label;
+}
+
+function AmenityRow(props: {
+  item: Amenity;
+  checked: boolean;
+  onToggle: (on: boolean) => void;
+}) {
+  return (
+    <label
+      className={`flex cursor-pointer items-center gap-3 rounded-md border px-4 py-3 text-callout transition duration-150 ${props.checked ? "border-ink bg-surface shadow-card" : "border-line bg-surface text-ink hover:border-ink-3"}`}
+    >
+      <input
+        type="checkbox"
+        checked={props.checked}
+        onChange={(e) => props.onToggle(e.target.checked)}
+        className="h-[18px] w-[18px] shrink-0 accent-[#1E2B24]"
+      />
+      <span>
+        {props.item.label}
+        {props.item.sub && (
+          <span className="block text-footnote text-ink-3">{props.item.sub}</span>
+        )}
+      </span>
+    </label>
   );
 }
